@@ -1,0 +1,93 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ dev ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  DOCKER_USERNAME: sosohan
+  IMAGE_NAME: onebaileyplatform
+  SERVER_HOST: 183.111.67.145
+  SERVER_USER: root
+  SERVER_PORT: 22302
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ env.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Build and push Backend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        push: true
+        tags: |
+          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest
+          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-${{ github.sha }}
+        cache-from: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-buildcache
+        cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-buildcache,mode=max
+
+    - name: Image info
+      run: |
+        echo "Backend image pushed:"
+        echo "${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ env.SERVER_HOST }}
+        username: ${{ env.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ env.SERVER_PORT }}
+        script: |
+          cd /fscm/onebailey/platform
+          
+          # 최신 이미지 pull
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest
+          
+          # Backend 컨테이너만 재시작
+          docker compose stop backend
+          docker compose rm -f backend
+          docker compose up -d backend
+          
+          # 상태 확인
+          sleep 5
+          echo "=== Backend Status ==="
+          docker compose ps backend
+          docker compose logs --tail=30 backend
+
+    - name: Verify Deployment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ env.SERVER_HOST }}
+        username: ${{ env.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ env.SERVER_PORT }}
+        script: |
+          cd /fscm/onebailey/platform
+          echo "=== Health Check ==="
+          curl -f http://localhost:8000/health || echo "Health check failed"
+          echo ""
+          echo "=== Container Logs ==="
+          docker compose logs --tail=20 backend

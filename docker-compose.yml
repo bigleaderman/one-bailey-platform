@@ -1,0 +1,81 @@
+services:
+  # Backend API
+  backend:
+    image: sosohan/onebaileyplatform:backend-latest
+    container_name: onebailey-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-db
+      DB_PORT: 5432
+      DB_NAME: onebailey
+      DB_USER: admin
+      DB_PASSWORD: qlalfdla1234!
+      USE_REAL_DB: "true"
+    ports:
+      - "8000:8000"
+    networks:
+      - onebailey-network
+
+  # Frontend
+  frontend:
+    image: sosohan/onebaileyplatform:frontend-latest
+    container_name: onebailey-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://183.111.67.145:8000
+      NODE_ENV: production
+    networks:
+      - onebailey-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(\`onebailey.shop\`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+
+  # Traefik (Reverse Proxy + SSL)
+  traefik:
+    image: traefik:v2.10
+    container_name: onebailey-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik:/etc/traefik"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - onebailey-network
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@onebailey.shop"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: onebailey
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: qlalfdla1234!
+      TZ: Asia/Seoul
+    ports:
+      - "5432:5432"
+    volumes:
+      - /fsdata/postgres_data:/var/lib/postgresql/data
+    networks:
+      - onebailey-network
+
+networks:
+  onebailey-network:
+    driver: bridge
