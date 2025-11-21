@@ -138,9 +138,8 @@ one-bailey-platform/
    sudo apt-get update
    sudo apt-get install certbot
 
-   # Get SSL certificate
-   sudo certbot certonly --webroot -w ./nginx/html \
-     -d onebailey.shop -d www.onebailey.shop
+   # Get SSL certificate (standalone mode)
+   sudo certbot certonly --standalone -d onebailey.shop
 
    # Copy certificates
    sudo cp /etc/letsencrypt/live/onebailey.shop/fullchain.pem ./nginx/ssl/
