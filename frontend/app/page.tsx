@@ -1,22 +1,8 @@
+import Link from 'next/link';
 import { getLatestPrediction } from '@/lib/api';
 
 export default async function Home() {
-  let prediction;
-  
-  try {
-    prediction = await getLatestPrediction();
-  } catch (error) {
-    // Mock 데이터
-    prediction = {
-      id: 1,
-      prediction_date: new Date().toISOString().split('T')[0],
-      direction: 'UP' as const,
-      confidence: 0.80,
-      summary: '글린 통걸 기대감으로 투자자들의 심리가 좋아졌어요',
-      key_factors: ['나스닥 선물 강세', '달러 약세'],
-      created_at: new Date().toISOString()
-    };
-  }
+  const prediction = await getLatestPrediction();
   
   const isUp = prediction.direction === 'UP';
   const confidencePercent = Math.round(prediction.confidence * 100);
@@ -26,9 +12,10 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      {/* 헤더 */}
       <header className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-blue-600">쉬운경제</h1>
+          <h1 className="text-2xl font-bold text-blue-600">OneBailey</h1>
           <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -38,6 +25,7 @@ export default async function Home() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* 메인 예측 카드 */}
         <div className={`rounded-3xl p-8 ${isUp ? 'bg-gradient-to-br from-green-400 to-green-500' : 'bg-gradient-to-br from-red-400 to-red-500'} text-white shadow-xl`}>
           <div className="flex items-center gap-2 mb-4">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,15 +42,18 @@ export default async function Home() {
             {prediction.summary}
           </p>
           
-          <button className="bg-white text-green-600 px-6 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-all">
-            자세히 보기
-          </button>
+          <Link href={`/prediction/${prediction.id}`}>
+            <button className="bg-white text-green-600 px-6 py-3 rounded-full font-semibold hover:bg-opacity-90 transition-all">
+              자세히 보기
+            </button>
+          </Link>
         </div>
 
+        {/* 나스닥 ETF 카드 */}
         <div className="bg-white rounded-3xl p-6 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold">나스닥 ETF (QQQ)</h3>
-            <span className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full">
+            <span className={`text-sm px-3 py-1 rounded-full ${isUp ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
               오늘 예측
             </span>
           </div>
@@ -87,13 +78,23 @@ export default async function Home() {
               <span className="ml-2 font-semibold">({confidencePercent}%)</span>
             </div>
           </div>
+          
+          <Link href={`/prediction/${prediction.id}`}>
+            <button className="w-full text-blue-600 py-3 border-t border-gray-200 font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+              예측 근거 보기
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </Link>
         </div>
       </div>
 
+      {/* 푸터 */}
       <footer className="bg-gray-900 text-gray-400 py-8 mt-12">
         <div className="max-w-4xl mx-auto px-4 text-center text-sm">
           <p className="mb-2">본 정보는 투자 참고용이며, 투자 손실에 대한 책임은 투자자 본인에게 있습니다.</p>
-          <p>© 2025 쉬운경제. All rights reserved.</p>
+          <p>© 2025 OneBailey. All rights reserved.</p>
         </div>
       </footer>
     </main>
