@@ -24,15 +24,3 @@ export async function getLatestPrediction(): Promise<Prediction> {
   
   return res.json();
 }
-
-export async function getAccuracyStats() {
-  const res = await fetch(`${API_URL}/api/predictions/stats/accuracy`, {
-    cache: 'no-store'
-  });
-  
-  if (!res.ok) {
-    throw new Error('Failed to fetch stats');
-  }
-  
-  return res.json();
-}
