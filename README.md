@@ -165,13 +165,12 @@ The project uses GitHub Actions for automated deployment. On every push to `dev`
 
 #### Required GitHub Secrets
 
-Add these secrets in your GitHub repository settings:
+Add these secrets in your GitHub repository settings (Settings > Secrets and variables > Actions):
 
-- `DOCKER_HUB_TOKEN`: Your Docker Hub access token
-- `VM_HOST`: 183.111.67.145
-- `VM_PORT`: 22302
-- `VM_USERNAME`: root
-- `VM_PASSWORD`: Your VM password
+- `DOCKER_TOKEN`: Your Docker Hub access token
+- `SERVER_SSH_KEY`: Your VM SSH private key (PEM format)
+
+**Note**: Server connection details (host, port, username) are configured in the workflow file.
 
 ### Manual Deployment
 
