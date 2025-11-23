@@ -67,7 +67,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/heads/claude/')
 
     steps:
       - name: Deploy to VM
