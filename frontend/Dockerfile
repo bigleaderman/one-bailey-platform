@@ -9,6 +9,9 @@ RUN npm install --legacy-peer-deps
 COPY . .
 RUN npm run build
 
+# Ensure public directory exists for COPY
+RUN mkdir -p public
+
 # Production stage
 FROM node:20-alpine AS runner
 
