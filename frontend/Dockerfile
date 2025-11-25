@@ -3,13 +3,16 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# 패키지 설치
+# 패키지 설치 (npm install로 변경 - package-lock.json 없음)
 COPY package*.json ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # 소스 복사 및 빌드
 COPY . .
 RUN npm run build
+
+# public 디렉토리 생성 (없을 경우를 대비)
+RUN mkdir -p public
 
 # Production stage
 FROM node:20-alpine AS runner
