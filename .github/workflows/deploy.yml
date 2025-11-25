@@ -1,0 +1,147 @@
+name: Build and Deploy to Server
+
+on:
+  push:
+    branches: [ dev, main ]
+  workflow_dispatch:
+
+env:
+  DOCKER_USERNAME: sosohan
+  IMAGE_NAME: onebaileyplatform
+  SERVER_HOST: 183.111.67.145
+  SERVER_USER: root
+  SERVER_PORT: 22302
+  DEPLOY_PATH: /fscm/onebailey/platform
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ env.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Build and push Backend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        push: true
+        tags: |
+          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest
+          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-${{ github.sha }}
+        cache-from: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-buildcache
+        cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-buildcache,mode=max
+
+    - name: Build and push Frontend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        push: true
+        tags: |
+          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-latest
+          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-${{ github.sha }}
+        cache-from: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-buildcache
+        cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-buildcache,mode=max
+
+    - name: Image info
+      run: |
+        echo "✅ Images pushed to Docker Hub:"
+        echo "Backend: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest"
+        echo "Frontend: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-latest"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ env.SERVER_HOST }}
+        username: ${{ env.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ env.SERVER_PORT }}
+        script: |
+          # 디렉토리 생성 및 이동
+          mkdir -p ${{ env.DEPLOY_PATH }}
+          cd ${{ env.DEPLOY_PATH }}
+
+          # Git 저장소 초기화 또는 업데이트
+          if [ -d ".git" ]; then
+            echo "📥 Updating repository..."
+            git fetch origin
+            git reset --hard origin/${{ github.ref_name }}
+          else
+            echo "📥 Cloning repository..."
+            git clone -b ${{ github.ref_name }} https://github.com/bigleaderman/one-bailey-platform.git .
+          fi
+
+          # 환경 변수 파일 확인
+          if [ ! -f ".env" ]; then
+            echo "⚠️  Warning: .env file not found. Creating from example..."
+            cp .env.example .env
+            echo "Please update .env file with actual values!"
+          fi
+
+          # 최신 이미지 pull
+          echo "🐳 Pulling latest Docker images..."
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest
+          docker pull ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-latest
+
+          # Let's Encrypt 디렉토리 생성 (처음 실행 시)
+          mkdir -p letsencrypt
+          chmod 600 letsencrypt
+
+          # 컨테이너 재시작
+          echo "🔄 Restarting containers..."
+          docker-compose down
+          docker-compose up -d
+
+          # 잠시 대기
+          sleep 10
+
+          # 상태 확인
+          echo ""
+          echo "=== 📊 Container Status ==="
+          docker-compose ps
+
+          echo ""
+          echo "=== 🔍 Backend Health Check ==="
+          curl -f http://localhost:8000/health || echo "⚠️  Backend health check failed"
+
+          echo ""
+          echo "=== 📋 Recent Logs ==="
+          docker-compose logs --tail=20 backend
+          docker-compose logs --tail=20 frontend
+
+    - name: Deployment Summary
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ env.SERVER_HOST }}
+        username: ${{ env.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ env.SERVER_PORT }}
+        script: |
+          cd ${{ env.DEPLOY_PATH }}
+          echo ""
+          echo "================================"
+          echo "✅ Deployment Completed!"
+          echo "================================"
+          echo "🌐 Frontend: https://onebailey.shop"
+          echo "🔧 Backend API: http://${{ env.SERVER_HOST }}:8000"
+          echo "📚 API Docs: http://${{ env.SERVER_HOST }}:8000/docs"
+          echo ""
+          echo "📊 Running Containers:"
+          docker-compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"

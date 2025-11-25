@@ -5,16 +5,17 @@ services:
     container_name: onebailey-backend
     restart: unless-stopped
     environment:
-      DB_HOST: postgres-db
+      DB_HOST: postgres-db  # 기존 PostgreSQL 컨테이너
       DB_PORT: 5432
       DB_NAME: onebailey
       DB_USER: admin
-      DB_PASSWORD: qlalfdla1234!
+      DB_PASSWORD: ${DB_PASSWORD:-qlalfdla1234!}
       USE_REAL_DB: "true"
     ports:
       - "8000:8000"
     networks:
       - onebailey-network
+      - default  # postgres-db와 통신하기 위한 기본 네트워크
 
   # Frontend
   frontend:
