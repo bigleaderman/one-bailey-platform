@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { getLatestPrediction } from '@/lib/api';
 
-export default async function PredictionDetail({ params }: { params: { id: string } }) {
+export default async function PredictionDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const prediction = await getLatestPrediction();
   
   const isUp = prediction.direction === 'UP';
