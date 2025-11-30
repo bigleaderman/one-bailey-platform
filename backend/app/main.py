@@ -63,13 +63,18 @@ def health():
 
 @app.get("/api/predictions/latest")
 def get_latest_prediction():
-    """최신 예측 조회 (개발 모드 - Mock 데이터)"""
+    """최신 예측 조회"""
 
     # 환경변수로 실제 DB 사용 여부 결정
     use_real_db = os.getenv('USE_REAL_DB', 'false').lower() == 'true'
 
     if not use_real_db:
-        return get_mock_prediction()
+        print("⚠️  Using MOCK data (USE_REAL_DB=false)")
+        mock_data = get_mock_prediction()
+        mock_data['_data_source'] = 'mock'  # 데이터 소스 표시
+        return mock_data
+
+    print("🔍 Fetching from REAL database (USE_REAL_DB=true)")
     
     # 실제 DB 연결 (프로덕션)
     try:
@@ -110,30 +115,39 @@ def get_latest_prediction():
         conn.close()
 
         if not result:
-            return get_mock_prediction()
-        
+            print("⚠️  No data found in database, using mock data")
+            mock_data = get_mock_prediction()
+            mock_data['_data_source'] = 'mock_fallback'
+            return mock_data
+
         prediction = dict(result)
-        
+
         # JSONB 필드 파싱
         if prediction.get('key_factors'):
             if isinstance(prediction['key_factors'], str):
                 prediction['key_factors'] = json.loads(prediction['key_factors'])
-        
+
         if prediction.get('risk_factors'):
             if isinstance(prediction['risk_factors'], str):
                 prediction['risk_factors'] = json.loads(prediction['risk_factors'])
-        
+
         # 날짜 형식 변환
         if prediction.get('prediction_date'):
             prediction['prediction_date'] = str(prediction['prediction_date'])
         if prediction.get('created_at'):
             prediction['created_at'] = prediction['created_at'].isoformat()
-        
+
+        prediction['_data_source'] = 'database'  # 실제 DB 데이터 표시
+        print(f"✅ Fetched from database: {prediction['prediction_date']}, direction={prediction['direction']}")
+
         return prediction
 
     except Exception as e:
-        print(f"Database error: {e}")
-        return get_mock_prediction()
+        print(f"❌ Database error: {e}")
+        print(f"Using mock data as fallback")
+        mock_data = get_mock_prediction()
+        mock_data['_data_source'] = 'mock_error_fallback'
+        return mock_data
 
 @app.get("/api/predictions/stats/accuracy")
 def get_accuracy_stats():

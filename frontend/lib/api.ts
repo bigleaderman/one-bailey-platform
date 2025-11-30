@@ -34,25 +34,31 @@ const mockPrediction: Prediction = {
 
 export async function getLatestPrediction(): Promise<Prediction> {
   try {
-    console.log('Fetching from:', `${API_URL}/api/predictions/latest`);
-    
+    console.log('🔍 Fetching from:', `${API_URL}/api/predictions/latest`);
+
     const res = await fetch(`${API_URL}/api/predictions/latest`, {
       cache: 'no-store',
       signal: AbortSignal.timeout(10000) // 10초 타임아웃
     });
-    
+
     if (!res.ok) {
-      console.warn(`API returned ${res.status}, using mock data`);
+      console.warn(`⚠️ API returned ${res.status}, using fallback mock data`);
       return mockPrediction;
     }
-    
+
     const data = await res.json();
-    console.log('API response:', data);
+    console.log('✅ API response received:', {
+      date: data.prediction_date,
+      direction: data.direction,
+      confidence: data.confidence,
+      hasKeyFactors: !!data.key_factors,
+      hasRiskFactors: !!data.risk_factors
+    });
     return data;
-    
+
   } catch (error) {
-    console.error('API fetch failed:', error);
-    console.log('Using mock data');
+    console.error('❌ API fetch failed:', error);
+    console.log('Using fallback mock data');
     return mockPrediction;
   }
 }
