@@ -18,26 +18,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mock 데이터 (개발용)
-MOCK_PREDICTION = {
-    "id": 1,
-    "prediction_date": "2025-11-20",
-    "direction": "UP",
-    "confidence": 0.80,
-    "actual_direction": None,
-    "actual_change": None,
-    "key_factors": [
-        "나스닥 선물 강세",
-        "달러 약세로 위험자산 선호",
-        "양의 2-10 스프레드 유지"
-    ],
-    "risk_factors": [
-        "높은 VIX 수준",
-        "반도체 섹터 부진"
-    ],
-    "summary": "글린 통걸 기대감으로 투자자들의 심리가 좋아졌어요",
-    "created_at": "2025-11-20T09:00:00"
-}
+from datetime import datetime, timedelta
+
+# Mock 데이터 생성 함수 (개발용 - 동적으로 최신 날짜 사용)
+def get_mock_prediction():
+    today = datetime.now()
+    return {
+        "id": 1,
+        "prediction_date": today.strftime("%Y-%m-%d"),
+        "direction": "UP",
+        "confidence": 0.80,
+        "actual_direction": None,
+        "actual_change": None,
+        "key_factors": [
+            "나스닥 선물 및 반도체 지수 강세: NQ 선물이 1.51%, SOX 지수가 1.82% 상승하며 기술주 투자 심리 개선을 시사.",
+            "정상적인 금리 스프레드: 2-10년물 금리 스프레드가 양수를 유지하며 경기 침체 우려 완화.",
+            "M2 통화량 증가: 통화량 증가로 유동성 개선 기대감 상승."
+        ],
+        "risk_factors": [
+            "높은 VIX 수준: VIX 지수가 20.96으로 중립 수준이지만, 여전히 변동성이 존재하며 예상치 못한 하락 가능성 존재.",
+            "달러 강세: 달러 인덱스 상승으로 해외 투자 자금 이탈 가능성.",
+            "낮은 풋/콜 비율: 시장 과열 신호로 단기 조정 가능성."
+        ],
+        "summary": "금리 동결 기대감으로 투자자들의 심리가 좋아졌어요",
+        "created_at": today.isoformat()
+    }
 
 @app.get("/")
 def root():
@@ -59,12 +64,12 @@ def health():
 @app.get("/api/predictions/latest")
 def get_latest_prediction():
     """최신 예측 조회 (개발 모드 - Mock 데이터)"""
-    
+
     # 환경변수로 실제 DB 사용 여부 결정
     use_real_db = os.getenv('USE_REAL_DB', 'false').lower() == 'true'
-    
+
     if not use_real_db:
-        return MOCK_PREDICTION
+        return get_mock_prediction()
     
     # 실제 DB 연결 (프로덕션)
     try:
@@ -103,9 +108,9 @@ def get_latest_prediction():
         result = cur.fetchone()
         cur.close()
         conn.close()
-        
+
         if not result:
-            return MOCK_PREDICTION
+            return get_mock_prediction()
         
         prediction = dict(result)
         
@@ -125,10 +130,10 @@ def get_latest_prediction():
             prediction['created_at'] = prediction['created_at'].isoformat()
         
         return prediction
-        
+
     except Exception as e:
         print(f"Database error: {e}")
-        return MOCK_PREDICTION
+        return get_mock_prediction()
 
 @app.get("/api/predictions/stats/accuracy")
 def get_accuracy_stats():
