@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import { getLatestPrediction } from '@/lib/api';
 
+// 동적 렌더링 강제 - 매 요청마다 최신 데이터를 가져옴
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function PredictionDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const prediction = await getLatestPrediction();
