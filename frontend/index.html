@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneBailey - 미국 증시 예측</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">OneBailey</h1>
+            <button class="notification-btn" id="notificationBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+            </button>
+        </header>
+
+        <main class="main-content">
+            <!-- Hero Section - 오늘의 시장 요약 -->
+            <section class="hero-card" id="heroSection">
+                <div class="hero-date">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    <span id="predictionDate">로딩 중...</span>
+                </div>
+                <h2 class="hero-title" id="heroTitle">
+                    예측 데이터를 불러오는 중...
+                </h2>
+                <p class="hero-subtitle" id="heroSubtitle">
+                    잠시만 기다려주세요
+                </p>
+                <button class="hero-btn" onclick="toggleDetails()">자세히 보기</button>
+            </section>
+
+            <!-- QQQ 예측 카드 -->
+            <section class="prediction-card">
+                <div class="prediction-header">
+                    <h3 class="prediction-title">나스닥 ETF (QQQ)</h3>
+                    <span class="prediction-badge">오늘 예측</span>
+                </div>
+                
+                <div class="prediction-content">
+                    <div class="prediction-direction" id="predictionDirection">
+                        <svg class="direction-icon" id="directionIcon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        <span id="directionText">상승 예상</span>
+                    </div>
+                    
+                    <div class="confidence-row">
+                        <span class="confidence-label">신뢰도:</span>
+                        <div class="stars" id="confidenceStars">
+                            <span class="star">⭐</span>
+                            <span class="star">⭐</span>
+                            <span class="star">⭐</span>
+                            <span class="star">⭐</span>
+                            <span class="star empty">⭐</span>
+                        </div>
+                        <span class="confidence-percent" id="confidencePercent">(80%)</span>
+                    </div>
+                </div>
+
+                <button class="expand-btn" id="expandBtn" onclick="toggleExpand()">
+                    예측 근거 보기
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+
+                <!-- 확장 영역 -->
+                <div class="expand-content" id="expandContent">
+                    <div class="factors-section positive">
+                        <h4>📈 상승 요인</h4>
+                        <ul id="keyFactorsList">
+                            <li>데이터 로딩 중...</li>
+                        </ul>
+                    </div>
+                    <div class="factors-section negative">
+                        <h4>⚠️ 리스크 요인</h4>
+                        <ul id="riskFactorsList">
+                            <li>데이터 로딩 중...</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>본 정보는 투자 참고용이며, 투자 손실에 대한 책임은 투자자 본인에게 있습니다.</p>
+            <p>© 2025 OneBailey. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,23 +1,20 @@
 # ============================================
-# 로컬 개발용 docker-compose
-# 서버 DB (183.111.67.145) 직접 연결
+# 서버 배포용 docker-compose
+# 서버 DB (postgres-db 컨테이너)와 같은 네트워크 사용
 # ============================================
 
 services:
   # Backend (FastAPI)
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: sosohan/onebaileyplatform:backend-latest
     container_name: onebailey-backend
     restart: unless-stopped
     environment:
-      # 서버 DB 연결 정보
-      DB_HOST: 183.111.67.145
-      DB_PORT: 5432
+      DB_HOST: postgres-db
+      DB_PORT: "5432"
       DB_NAME: onebailey
       DB_USER: admin
-      DB_PASSWORD: "qlalfdla1234!"
+      DB_PASSWORD: "${DB_PASSWORD}"
     ports:
       - "8000:8000"
     networks:
@@ -25,13 +22,11 @@ services:
 
   # Frontend
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: sosohan/onebaileyplatform:frontend-latest
     container_name: onebailey-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - backend
     networks:
@@ -39,4 +34,4 @@ services:
 
 networks:
   onebailey-network:
-    driver: bridge
+    external: true

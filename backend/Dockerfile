@@ -1,27 +1,39 @@
+# ============================================
+# Backend Dockerfile - Python 3.12
+# ============================================
+
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade pip setuptools wheel
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# 시스템 패키지 설치 (psycopg2-binary 빌드에 필요)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    postgresql-client \
+    libpq5 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Python 패키지 설치
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
 
-# 애플리케이션 코드 복사
-COPY ./app /app/app
-
-# 환경변수 설정
-ENV PYTHONUNBUFFERED=1
-ENV USE_REAL_DB=true
+COPY . .
 
 EXPOSE 8000
 
-# Uvicorn으로 실행 (프로덕션 환경)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

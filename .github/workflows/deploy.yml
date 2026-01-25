@@ -1,147 +1,134 @@
-name: Build and Deploy to Server
+name: Build and Deploy
 
 on:
   push:
-    branches: [ dev, main ]
-  workflow_dispatch:
+    branches: [dev, main]
 
 env:
   DOCKER_USERNAME: sosohan
-  IMAGE_NAME: onebaileyplatform
+  DOCKER_IMAGE: sosohan/onebaileyplatform
   SERVER_HOST: 183.111.67.145
-  SERVER_USER: root
   SERVER_PORT: 22302
-  DEPLOY_PATH: /fscm/onebailey/platform
+  SERVER_USER: root
+  DEPLOY_PATH: /fscm/onebailey
 
 jobs:
-  build-and-push:
+  # ========================================
+  # Build Backend
+  # ========================================
+  build-backend:
+    name: Build Backend
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ env.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
-    - name: Build and push Backend
-      uses: docker/build-push-action@v5
-      with:
-        context: ./backend
-        push: true
-        tags: |
-          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest
-          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-${{ github.sha }}
-        cache-from: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-buildcache
-        cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-buildcache,mode=max
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:backend-latest
+            ${{ env.DOCKER_IMAGE }}:backend-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Build and push Frontend
-      uses: docker/build-push-action@v5
-      with:
-        context: ./frontend
-        push: true
-        tags: |
-          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-latest
-          ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-${{ github.sha }}
-        cache-from: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-buildcache
-        cache-to: type=registry,ref=${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-buildcache,mode=max
+  # ========================================
+  # Build Frontend
+  # ========================================
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Image info
-      run: |
-        echo "✅ Images pushed to Docker Hub:"
-        echo "Backend: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest"
-        echo "Frontend: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-latest"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:frontend-latest
+            ${{ env.DOCKER_IMAGE }}:frontend-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ========================================
+  # Deploy to Server
+  # ========================================
   deploy:
-    needs: build-and-push
+    name: Deploy to Server
     runs-on: ubuntu-latest
-
+    needs: [build-backend, build-frontend]
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Deploy to Server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ env.SERVER_HOST }}
-        username: ${{ env.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        port: ${{ env.SERVER_PORT }}
-        script: |
-          # 디렉토리 생성 및 이동
-          mkdir -p ${{ env.DEPLOY_PATH }}
-          cd ${{ env.DEPLOY_PATH }}
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ env.SERVER_PORT }} ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-          # Git 저장소 초기화 또는 업데이트
-          if [ -d ".git" ]; then
-            echo "📥 Updating repository..."
-            git fetch origin
-            git reset --hard origin/${{ github.ref_name }}
-          else
-            echo "📥 Cloning repository..."
-            git clone -b ${{ github.ref_name }} https://github.com/bigleaderman/one-bailey-platform.git .
-          fi
+      - name: Copy docker-compose to server
+        run: |
+          scp -P ${{ env.SERVER_PORT }} docker-compose.prod.yml ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/docker-compose.yml
 
-          # 환경 변수 파일 확인
-          if [ ! -f ".env" ]; then
-            echo "⚠️  Warning: .env file not found. Creating from example..."
-            cp .env.example .env
-            echo "Please update .env file with actual values!"
-          fi
-
-          # 최신 이미지 pull
-          echo "🐳 Pulling latest Docker images..."
-          docker pull ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:backend-latest
-          docker pull ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:frontend-latest
-
-          # Let's Encrypt 디렉토리 생성 (처음 실행 시)
-          mkdir -p letsencrypt
-          chmod 600 letsencrypt
-
-          # 컨테이너 재시작
-          echo "🔄 Restarting containers..."
-          docker-compose down
-          docker-compose up -d
-
-          # 잠시 대기
-          sleep 10
-
-          # 상태 확인
-          echo ""
-          echo "=== 📊 Container Status ==="
-          docker-compose ps
-
-          echo ""
-          echo "=== 🔍 Backend Health Check ==="
-          curl -f http://localhost:8000/health || echo "⚠️  Backend health check failed"
-
-          echo ""
-          echo "=== 📋 Recent Logs ==="
-          docker-compose logs --tail=20 backend
-          docker-compose logs --tail=20 frontend
-
-    - name: Deployment Summary
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ env.SERVER_HOST }}
-        username: ${{ env.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        port: ${{ env.SERVER_PORT }}
-        script: |
-          cd ${{ env.DEPLOY_PATH }}
-          echo ""
-          echo "================================"
-          echo "✅ Deployment Completed!"
-          echo "================================"
-          echo "🌐 Frontend: https://onebailey.shop"
-          echo "🔧 Backend API: http://${{ env.SERVER_HOST }}:8000"
-          echo "📚 API Docs: http://${{ env.SERVER_HOST }}:8000/docs"
-          echo ""
-          echo "📊 Running Containers:"
-          docker-compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+      - name: Deploy
+        run: |
+          ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
+            cd /fscm/onebailey
+            
+            # Docker 로그인
+            echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u sosohan --password-stdin
+            
+            # 네트워크 생성 (없으면)
+            docker network create onebailey-network 2>/dev/null || true
+            
+            # postgres-db를 네트워크에 연결 (없으면)
+            docker network connect onebailey-network postgres-db 2>/dev/null || true
+            
+            # 최신 이미지 pull
+            docker pull sosohan/onebaileyplatform:backend-latest
+            docker pull sosohan/onebaileyplatform:frontend-latest
+            
+            # 기존 컨테이너 중지 및 삭제
+            docker compose down --remove-orphans 2>/dev/null || true
+            
+            # 새 컨테이너 시작
+            docker compose up -d
+            
+            # 정리
+            docker image prune -f
+            
+            # 상태 확인
+            echo "=== Container Status ==="
+            docker compose ps
+            
+            echo ""
+            echo "=== Health Check ==="
+            sleep 5
+            curl -sf http://localhost:8000/ && echo "✅ Backend OK" || echo "❌ Backend Failed"
+            curl -sf http://localhost:80 && echo "✅ Frontend OK" || echo "❌ Frontend Failed"
+          ENDSSH

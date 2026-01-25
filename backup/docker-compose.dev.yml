@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Backend API (로컬 빌드 → 서버 DB 연결)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: onebailey-backend-dev
+    restart: unless-stopped
+    environment:
+      # 서버의 실제 PostgreSQL DB에 연결
+      DB_HOST: 183.111.67.145
+      DB_PORT: 5432
+      DB_NAME: onebailey
+      DB_USER: admin
+      DB_PASSWORD: qlalfdla1234!
+      USE_REAL_DB: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app  # 핫 리로드를 위한 볼륨 마운트
+    networks:
+      - onebailey-dev-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (로컬 빌드 → 로컬 백엔드 연결)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: onebailey-frontend-dev
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - onebailey-dev-network
+
+networks:
+  onebailey-dev-network:
+    driver: bridge
