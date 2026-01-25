@@ -1,5 +1,21 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-psycopg2-binary==2.9.9
-python-dotenv==1.0.0
-pydantic==2.5.0
+# ============================================
+# FastAPI Backend Dependencies
+# Python 3.12 호환 확인된 버전들
+# ============================================
+
+# FastAPI & ASGI Server
+fastapi>=0.109.0,<0.115.0
+uvicorn[standard]>=0.27.0,<0.32.0
+
+# Database
+sqlalchemy>=2.0.0,<2.1.0
+psycopg2-binary>=2.9.9,<3.0.0
+
+# Pydantic (FastAPI 의존성)
+pydantic>=2.5.0,<3.0.0
+pydantic-settings>=2.1.0,<3.0.0
+
+# Utilities
+python-dotenv>=1.0.0,<2.0.0
+python-multipart>=0.0.6
+httpx>=0.26.0,<0.28.0

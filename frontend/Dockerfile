@@ -1,41 +1,19 @@
-# Build stage
-FROM node:20-alpine AS builder
+# ============================================
+# Frontend Dockerfile - Nginx로 정적 파일 서빙
+# ============================================
 
-WORKDIR /app
+FROM nginx:alpine
 
-# 패키지 설치 (npm install로 변경 - package-lock.json 없음)
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
+# Nginx 설정 복사
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# 소스 복사 및 빌드
-COPY . .
-RUN npm run build
+# 정적 파일 복사
+COPY index.html /usr/share/nginx/html/
+COPY app.js /usr/share/nginx/html/
+COPY styles.css /usr/share/nginx/html/
 
-# public 디렉토리 생성 (없을 경우를 대비)
-RUN mkdir -p public
+RUN chmod -R 755 /usr/share/nginx/html
 
-# Production stage
-FROM node:20-alpine AS runner
+EXPOSE 80
 
-WORKDIR /app
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-# 비root 유저 생성
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-# 빌드된 파일 복사
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-CMD ["node", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]

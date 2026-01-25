@@ -1,164 +1,171 @@
-from fastapi import FastAPI, HTTPException
+"""
+OneBailey Backend - FastAPI Application
+DB에서 predictions 데이터를 조회하여 프론트엔드에 제공
+"""
+
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
+from sqlalchemy import create_engine, Column, Integer, String, Float, Date, DateTime, Text, JSON, desc
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.sql import func
+from pydantic import BaseModel
+from typing import Optional, List
+from datetime import date, datetime
 import os
 
+# ============================================
+# Database Configuration
+# ============================================
+DB_HOST = os.getenv("DB_HOST", "postgres-db")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "onebailey")
+DB_USER = os.getenv("DB_USER", "admin")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+
+DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# ============================================
+# Models
+# ============================================
+class Prediction(Base):
+    __tablename__ = "predictions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    prediction_date = Column(Date, nullable=False)
+    direction = Column(String(10), nullable=False)  # UP, DOWN, HOLD
+    confidence = Column(Float, nullable=False)
+    actual_direction = Column(String(10), nullable=True)
+    actual_change = Column(Float, nullable=True)
+    key_factors = Column(JSON, nullable=True)
+    risk_factors = Column(JSON, nullable=True)
+    summary = Column(Text, nullable=True)
+    llm_response = Column(JSON, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+# ============================================
+# Schemas
+# ============================================
+class TodayPredictionResponse(BaseModel):
+    date: str
+    direction: str
+    direction_text: str
+    confidence: float
+    confidence_percent: int
+    confidence_stars: int
+    summary: str
+    key_factors: List[str]
+    risk_factors: List[str]
+
+class PredictionResponse(BaseModel):
+    id: int
+    prediction_date: date
+    direction: str
+    confidence: float
+    summary: Optional[str] = None
+    key_factors: Optional[List[str]] = None
+    risk_factors: Optional[List[str]] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ============================================
+# FastAPI App
+# ============================================
 app = FastAPI(
     title="OneBailey API",
-    description="QQQ ETF 예측 서비스",
+    description="QQQ ETF 예측 서비스 API",
     version="1.0.0"
 )
 
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # 프로덕션에서는 도메인 지정 권장
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-from datetime import datetime, timedelta
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-# Mock 데이터 생성 함수 (개발용 - 동적으로 최신 날짜 사용)
-def get_mock_prediction():
-    today = datetime.now()
-    return {
-        "id": 1,
-        "prediction_date": today.strftime("%Y-%m-%d"),
-        "direction": "UP",
-        "confidence": 0.80,
-        "actual_direction": None,
-        "actual_change": None,
-        "key_factors": [
-            "나스닥 선물 및 반도체 지수 강세: NQ 선물이 1.51%, SOX 지수가 1.82% 상승하며 기술주 투자 심리 개선을 시사.",
-            "정상적인 금리 스프레드: 2-10년물 금리 스프레드가 양수를 유지하며 경기 침체 우려 완화.",
-            "M2 통화량 증가: 통화량 증가로 유동성 개선 기대감 상승."
-        ],
-        "risk_factors": [
-            "높은 VIX 수준: VIX 지수가 20.96으로 중립 수준이지만, 여전히 변동성이 존재하며 예상치 못한 하락 가능성 존재.",
-            "달러 강세: 달러 인덱스 상승으로 해외 투자 자금 이탈 가능성.",
-            "낮은 풋/콜 비율: 시장 과열 신호로 단기 조정 가능성."
-        ],
-        "summary": "금리 동결 기대감으로 투자자들의 심리가 좋아졌어요",
-        "created_at": today.isoformat()
-    }
-
+# ============================================
+# Routes
+# ============================================
 @app.get("/")
-def root():
-    return {
-        "status": "healthy",
-        "service": "OneBailey API",
-        "version": "1.0.0",
-        "mode": "development",
-        "endpoints": [
-            "/api/predictions/latest",
-            "/api/predictions/stats/accuracy"
-        ]
-    }
+async def root():
+    return {"status": "ok", "message": "OneBailey API is running"}
 
 @app.get("/health")
-def health():
-    return {"status": "healthy", "mode": "development"}
+async def health():
+    return {"status": "healthy"}
 
-@app.get("/api/predictions/latest")
-def get_latest_prediction():
-    """최신 예측 조회"""
-
-    # 환경변수로 실제 DB 사용 여부 결정
-    use_real_db = os.getenv('USE_REAL_DB', 'false').lower() == 'true'
-
-    if not use_real_db:
-        print("⚠️  Using MOCK data (USE_REAL_DB=false)")
-        mock_data = get_mock_prediction()
-        mock_data['_data_source'] = 'mock'  # 데이터 소스 표시
-        return mock_data
-
-    print("🔍 Fetching from REAL database (USE_REAL_DB=true)")
+@app.get("/api/predictions/today", response_model=TodayPredictionResponse)
+def get_today_prediction(db: Session = Depends(get_db)):
+    """오늘의 예측 조회 (가장 최근 데이터)"""
+    today = date.today()
     
-    # 실제 DB 연결 (프로덕션)
-    try:
-        import psycopg2
-        from psycopg2.extras import RealDictCursor
-        import json
-        
-        DB_CONFIG = {
-            'host': os.getenv('DB_HOST', 'postgres-db'),
-            'port': int(os.getenv('DB_PORT', '5432')),
-            'database': os.getenv('DB_NAME', 'onebailey'),
-            'user': os.getenv('DB_USER', 'admin'),
-            'password': os.getenv('DB_PASSWORD', 'qlalfdla1234!')
-        }
-        
-        conn = psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
-        cur = conn.cursor()
-        
-        cur.execute("""
-            SELECT 
-                id,
-                prediction_date,
-                direction,
-                confidence,
-                actual_direction,
-                actual_change,
-                key_factors,
-                risk_factors,
-                summary,
-                created_at
-            FROM predictions
-            ORDER BY prediction_date DESC
-            LIMIT 1
-        """)
-        
-        result = cur.fetchone()
-        cur.close()
-        conn.close()
-
-        if not result:
-            print("⚠️  No data found in database, using mock data")
-            mock_data = get_mock_prediction()
-            mock_data['_data_source'] = 'mock_fallback'
-            return mock_data
-
-        prediction = dict(result)
-
-        # JSONB 필드 파싱
-        if prediction.get('key_factors'):
-            if isinstance(prediction['key_factors'], str):
-                prediction['key_factors'] = json.loads(prediction['key_factors'])
-
-        if prediction.get('risk_factors'):
-            if isinstance(prediction['risk_factors'], str):
-                prediction['risk_factors'] = json.loads(prediction['risk_factors'])
-
-        # 날짜 형식 변환
-        if prediction.get('prediction_date'):
-            prediction['prediction_date'] = str(prediction['prediction_date'])
-        if prediction.get('created_at'):
-            prediction['created_at'] = prediction['created_at'].isoformat()
-
-        prediction['_data_source'] = 'database'  # 실제 DB 데이터 표시
-        print(f"✅ Fetched from database: {prediction['prediction_date']}, direction={prediction['direction']}")
-
-        return prediction
-
-    except Exception as e:
-        print(f"❌ Database error: {e}")
-        print(f"Using mock data as fallback")
-        mock_data = get_mock_prediction()
-        mock_data['_data_source'] = 'mock_error_fallback'
-        return mock_data
-
-@app.get("/api/predictions/stats/accuracy")
-def get_accuracy_stats():
-    """예측 정확도 통계"""
-    return {
-        "total": 10,
-        "correct": 8,
-        "accuracy": 80.0,
-        "avg_confidence": 0.75
+    # 오늘 또는 가장 최근 예측 조회
+    prediction = db.query(Prediction)\
+        .filter(Prediction.prediction_date <= today)\
+        .order_by(desc(Prediction.prediction_date))\
+        .first()
+    
+    if not prediction:
+        raise HTTPException(status_code=404, detail="예측 데이터가 없습니다")
+    
+    # 방향 텍스트 변환
+    direction_map = {
+        "UP": "상승 예상",
+        "DOWN": "하락 예상",
+        "HOLD": "보합 예상"
     }
+    
+    # 신뢰도 계산
+    confidence_percent = int(prediction.confidence * 100) if prediction.confidence <= 1 else int(prediction.confidence)
+    confidence_stars = min(5, max(1, int(confidence_percent / 20)))
+    
+    # key_factors, risk_factors 처리
+    key_factors = prediction.key_factors if isinstance(prediction.key_factors, list) else []
+    risk_factors = prediction.risk_factors if isinstance(prediction.risk_factors, list) else []
+    
+    return TodayPredictionResponse(
+        date=prediction.prediction_date.strftime("%Y년 %m월 %d일"),
+        direction=prediction.direction,
+        direction_text=direction_map.get(prediction.direction, prediction.direction),
+        confidence=prediction.confidence,
+        confidence_percent=confidence_percent,
+        confidence_stars=confidence_stars,
+        summary=prediction.summary or "예측 요약이 없습니다.",
+        key_factors=key_factors[:5] if key_factors else [],
+        risk_factors=risk_factors[:5] if risk_factors else []
+    )
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/api/predictions", response_model=List[PredictionResponse])
+def get_predictions(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """예측 목록 조회"""
+    predictions = db.query(Prediction)\
+        .order_by(desc(Prediction.prediction_date))\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+    return predictions
+
+@app.get("/api/predictions/{prediction_id}", response_model=PredictionResponse)
+def get_prediction(prediction_id: int, db: Session = Depends(get_db)):
+    """특정 예측 조회"""
+    prediction = db.query(Prediction).filter(Prediction.id == prediction_id).first()
+    if not prediction:
+        raise HTTPException(status_code=404, detail="예측을 찾을 수 없습니다")
+    return prediction
