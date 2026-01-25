@@ -3,8 +3,8 @@
 미국 증시(QQQ ETF) 예측 서비스
 
 ## 📋 프로젝트 구조
-
-```
+ 
+``` 
 one-bailey-platform/
 ├── backend/
 │   ├── Dockerfile
