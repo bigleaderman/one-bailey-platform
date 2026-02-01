@@ -1,10 +1,10 @@
 # ============================================
-# 서버 배포용 docker-compose
-# 서버 DB (postgres-db 컨테이너)와 같은 네트워크 사용
+# 앱 배포용 docker-compose (Backend + Frontend)
+# GitHub Actions 배포 대상
+# 경로: /fscm/onebailey/app/
 # ============================================
 
 services:
-  # Backend (FastAPI)
   backend:
     image: sosohan/onebaileyplatform:backend-latest
     container_name: onebailey-backend
@@ -15,20 +15,17 @@ services:
       DB_NAME: onebailey
       DB_USER: admin
       DB_PASSWORD: "${DB_PASSWORD}"
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - onebailey-network
 
-  # Frontend
   frontend:
     image: sosohan/onebaileyplatform:frontend-latest
     container_name: onebailey-frontend
     restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
+    expose:
+      - "80"
     networks:
       - onebailey-network
 

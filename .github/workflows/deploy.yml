@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [dev, main]
+    branches: [main]
 
 env:
   DOCKER_USERNAME: sosohan
@@ -10,7 +10,7 @@ env:
   SERVER_HOST: 183.111.67.145
   SERVER_PORT: 22302
   SERVER_USER: root
-  DEPLOY_PATH: /fscm/onebailey
+  DEPLOY_PATH: /fscm/onebailey/app
 
 jobs:
   # ========================================
@@ -98,7 +98,7 @@ jobs:
       - name: Deploy
         run: |
           ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
-            cd /fscm/onebailey
+            cd /fscm/onebailey/app
             
             # Docker 로그인
             echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u sosohan --password-stdin
@@ -130,5 +130,4 @@ jobs:
             echo "=== Health Check ==="
             sleep 5
             curl -sf http://localhost:8000/ && echo "✅ Backend OK" || echo "❌ Backend Failed"
-            curl -sf http://localhost:80 && echo "✅ Frontend OK" || echo "❌ Frontend Failed"
           ENDSSH
