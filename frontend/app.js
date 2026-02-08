@@ -104,7 +104,7 @@ function updateUI(data) {
  */
 function updateFactorsList(element, factors, emptyMessage) {
     if (factors && factors.length > 0) {
-        element.innerHTML = factors.map(f => `<li>${truncateText(f, 100)}</li>`).join('');
+        element.innerHTML = factors.map(f => `<li>${f}</li>`).join('');
     } else {
         element.innerHTML = `<li>${emptyMessage}</li>`;
     }

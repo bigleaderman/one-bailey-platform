@@ -258,7 +258,7 @@ body {
 }
 
 .expand-content.show {
-    max-height: 2000px;
+    max-height: 5000px;
     margin-top: 16px;
     overflow: visible;
 }

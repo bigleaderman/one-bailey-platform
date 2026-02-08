@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
 
 env:
   DOCKER_USERNAME: sosohan
@@ -14,11 +14,34 @@ env:
 
 jobs:
   # ========================================
-  # Build Backend
+  # 변경된 파일 감지
+  # ========================================
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  # ========================================
+  # Build Backend (backend 폴더 변경 시에만)
   # ========================================
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -44,11 +67,13 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ========================================
-  # Build Frontend
+  # Build Frontend (frontend 폴더 변경 시에만)
   # ========================================
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -74,13 +99,16 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ========================================
-  # Deploy to Server
+  # Deploy to Server (변경된 것만 배포)
   # ========================================
   deploy:
     name: Deploy to Server
     runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
-    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    needs: [changes, build-backend, build-frontend]
+    if: |
+      always() &&
+      (needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true') &&
+      (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
     steps:
       - uses: actions/checkout@v4
 
@@ -109,25 +137,36 @@ jobs:
             # postgres-db를 네트워크에 연결 (없으면)
             docker network connect onebailey-network postgres-db 2>/dev/null || true
             
-            # 최신 이미지 pull
-            docker pull sosohan/onebaileyplatform:backend-latest
-            docker pull sosohan/onebaileyplatform:frontend-latest
+            # 변경된 이미지만 pull
+            if [ "${{ needs.changes.outputs.backend }}" == "true" ]; then
+              echo "📦 Pulling Backend..."
+              docker pull sosohan/onebaileyplatform:backend-latest
+            fi
             
-            # 기존 컨테이너 중지 및 삭제
+            if [ "${{ needs.changes.outputs.frontend }}" == "true" ]; then
+              echo "📦 Pulling Frontend..."
+              docker pull sosohan/onebaileyplatform:frontend-latest
+            fi
+            
+            # 컨테이너 재시작
             docker compose down --remove-orphans 2>/dev/null || true
-            
-            # 새 컨테이너 시작
             docker compose up -d
+            
+            # Nginx 재시작 (Backend IP 갱신)
+            cd /fscm/onebailey/nginx
+            docker compose restart nginx
             
             # 정리
             docker image prune -f
             
             # 상태 확인
+            echo ""
             echo "=== Container Status ==="
-            docker compose ps
+            docker ps | grep onebailey
             
             echo ""
             echo "=== Health Check ==="
             sleep 5
-            curl -sf http://localhost:8000/ && echo "✅ Backend OK" || echo "❌ Backend Failed"
+            curl -sk https://localhost/api/predictions/today > /dev/null && echo "✅ API OK" || echo "❌ API Failed"
+            curl -sk https://localhost/ > /dev/null && echo "✅ Frontend OK" || echo "❌ Frontend Failed"
           ENDSSH
