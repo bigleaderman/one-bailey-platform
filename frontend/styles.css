@@ -258,8 +258,9 @@ body {
 }
 
 .expand-content.show {
-    max-height: 600px;
+    max-height: 2000px;
     margin-top: 16px;
+    overflow: visible;
 }
 
 .factors-section {
