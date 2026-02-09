@@ -258,9 +258,8 @@ body {
 }
 
 .expand-content.show {
-    max-height: 5000px;
+    max-height: 5000px;  /* 넉넉하게 */
     margin-top: 16px;
-    overflow: visible;
 }
 
 .factors-section {
@@ -348,4 +347,130 @@ body {
     .prediction-direction span {
         font-size: 1.5rem;
     }
+}
+
+/* ============================================
+   Monthly Trend (이번 달 시장 흐름)
+   ============================================ */
+.monthly-trend-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 16px;
+}
+
+.weekly-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.weekly-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-radius: 12px;
+    background: #f9fafb;
+    transition: all 0.2s;
+}
+
+.weekly-item.current {
+    background: #f0fdf4;
+    border: 2px solid #22c55e;
+}
+
+.weekly-item.current.down {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+.weekly-item.current.hold {
+    background: #f5f5f5;
+    border-color: #6b7280;
+}
+
+.week-label {
+    width: 60px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+.weekly-item.current .week-label {
+    color: #22c55e;
+}
+
+.weekly-item.current.down .week-label {
+    color: #ef4444;
+}
+
+.week-content {
+    flex: 1;
+    margin-left: 12px;
+}
+
+.week-direction {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.week-direction-icon {
+    font-size: 0.9rem;
+}
+
+.week-direction-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.week-direction-text.up {
+    color: #22c55e;
+}
+
+.week-direction-text.down {
+    color: #ef4444;
+}
+
+.week-direction-text.hold {
+    color: #6b7280;
+}
+
+.week-summary {
+    font-size: 0.85rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.week-change {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.week-change.up {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.week-change.down {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.week-change.hold {
+    background: #f3f4f6;
+    color: #6b7280;
 }

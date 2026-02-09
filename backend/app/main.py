@@ -148,8 +148,8 @@ def get_today_prediction(db: Session = Depends(get_db)):
         confidence_percent=confidence_percent,
         confidence_stars=confidence_stars,
         summary=prediction.summary or "예측 요약이 없습니다.",
-        key_factors=key_factors[:5] if key_factors else [],
-        risk_factors=risk_factors[:5] if risk_factors else []
+        key_factors=key_factors,  # 전체 반환
+        risk_factors=risk_factors  # 전체 반환
     )
 
 @app.get("/api/predictions", response_model=List[PredictionResponse])
@@ -169,3 +169,122 @@ def get_prediction(prediction_id: int, db: Session = Depends(get_db)):
     if not prediction:
         raise HTTPException(status_code=404, detail="예측을 찾을 수 없습니다")
     return prediction
+
+
+# ============================================
+# 월간 시장 흐름 API (이번 달 시장 흐름)
+# ============================================
+class WeeklyTrend(BaseModel):
+    """주간 트렌드 응답"""
+    week_number: int              # 1, 2, 3, 4
+    week_label: str               # "1주차", "2주차", "이번주"
+    start_date: str               # "2/3"
+    end_date: str                 # "2/9"
+    direction: str                # "UP", "DOWN", "HOLD"
+    direction_text: str           # "상승", "하락", "보합"
+    total_change: float           # 주간 총 변동률
+    summary: str                  # "금리 안정화로 시장 신뢰 회복"
+    is_current_week: bool         # 이번 주 여부
+
+
+class MonthlyTrendResponse(BaseModel):
+    """월간 시장 흐름 응답"""
+    month: str                    # "2월"
+    weeks: List[WeeklyTrend]
+
+
+@app.get("/api/market/monthly-trend", response_model=MonthlyTrendResponse)
+def get_monthly_trend(db: Session = Depends(get_db)):
+    """
+    이번 달 시장 흐름 (최근 4주)
+    - 각 주의 actual_change 합산으로 상승/하락/보합 판단
+    - 주 단위: 월요일 ~ 일요일
+    """
+    from datetime import timedelta
+    
+    today = date.today()
+    
+    # 이번 주 월요일 찾기 (weekday: 월=0, 화=1, ..., 일=6)
+    days_since_monday = today.weekday()
+    this_monday = today - timedelta(days=days_since_monday)
+    
+    weeks_data = []
+    
+    # 최근 4주 데이터 조회 (이번주 포함)
+    for i in range(4):
+        # i=0: 3주 전, i=1: 2주 전, i=2: 1주 전, i=3: 이번주
+        week_offset = 3 - i
+        week_monday = this_monday - timedelta(weeks=week_offset)
+        week_sunday = week_monday + timedelta(days=6)
+        
+        # 해당 주의 예측 데이터 조회
+        predictions = db.query(Prediction).filter(
+            Prediction.prediction_date >= week_monday,
+            Prediction.prediction_date <= week_sunday,
+            Prediction.actual_change.isnot(None)  # 실제 변동률이 있는 것만
+        ).all()
+        
+        # 주간 총 변동률 계산
+        total_change = sum(p.actual_change for p in predictions if p.actual_change) if predictions else 0
+        
+        # 방향 결정 (±0.5% 이내면 보합)
+        if total_change > 0.5:
+            direction = "UP"
+            direction_text = "상승"
+        elif total_change < -0.5:
+            direction = "DOWN"
+            direction_text = "하락"
+        else:
+            direction = "HOLD"
+            direction_text = "보합"
+        
+        # 이번 주 여부
+        is_current_week = (week_offset == 0)
+        
+        # 주차 라벨
+        week_number = i + 1
+        week_label = "이번주" if is_current_week else f"{week_number}주차"
+        
+        # 요약 생성
+        if is_current_week:
+            # 이번 주는 예측 기반
+            latest_prediction = db.query(Prediction)\
+                .filter(Prediction.prediction_date >= week_monday)\
+                .order_by(desc(Prediction.prediction_date))\
+                .first()
+            if latest_prediction and latest_prediction.summary:
+                # summary에서 첫 문장만 추출
+                summary = latest_prediction.summary.split('.')[0] + "."
+                if len(summary) > 30:
+                    summary = summary[:30] + "..."
+            else:
+                summary = f"{direction_text} 예상"
+            # 이번 주는 예측 방향 사용
+            if latest_prediction:
+                direction = latest_prediction.direction
+                direction_text = "상승 예상" if direction == "UP" else "하락 예상" if direction == "DOWN" else "보합 예상"
+        else:
+            # 지난 주들은 실제 결과 기반 요약
+            if direction == "UP":
+                summary = "시장 상승세 기록"
+            elif direction == "DOWN":
+                summary = "시장 하락세 기록"
+            else:
+                summary = "시장 보합세 유지"
+        
+        weeks_data.append(WeeklyTrend(
+            week_number=week_number,
+            week_label=week_label,
+            start_date=week_monday.strftime("%-m/%d"),
+            end_date=week_sunday.strftime("%-m/%d"),
+            direction=direction,
+            direction_text=direction_text,
+            total_change=round(total_change, 2),
+            summary=summary,
+            is_current_week=is_current_week
+        ))
+    
+    return MonthlyTrendResponse(
+        month=f"{today.month}월",
+        weeks=weeks_data
+    )

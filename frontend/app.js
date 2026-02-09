@@ -4,6 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     loadPrediction();
+    loadMonthlyTrend();  // 추가
 });
 
 // 요소 참조
@@ -149,3 +150,80 @@ function toggleDetails() {
 document.getElementById('notificationBtn').addEventListener('click', function() {
     alert('알림 기능은 준비 중입니다.');
 });
+
+/**
+ * 월간 시장 흐름 로드
+ */
+async function loadMonthlyTrend() {
+    const weeklyList = document.getElementById('weeklyList');
+    
+    try {
+        const response = await fetch('/api/market/monthly-trend');
+        
+        if (!response.ok) {
+            throw new Error('데이터를 불러올 수 없습니다');
+        }
+        
+        const data = await response.json();
+        renderMonthlyTrend(data);
+    } catch (error) {
+        console.error('Error loading monthly trend:', error);
+        weeklyList.innerHTML = '<div class="weekly-item"><span class="week-label">데이터 로딩 실패</span></div>';
+    }
+}
+
+/**
+ * 월간 시장 흐름 렌더링
+ */
+function renderMonthlyTrend(data) {
+    const weeklyList = document.getElementById('weeklyList');
+    
+    // 섹션 타이틀 업데이트
+    const sectionTitle = document.querySelector('.monthly-trend-card .section-title');
+    if (sectionTitle) {
+        sectionTitle.textContent = `📈 ${data.month} 시장 흐름`;
+    }
+    
+    // 주간 아이템 생성
+    let html = '';
+    
+    data.weeks.forEach(week => {
+        const directionClass = week.direction.toLowerCase();
+        const currentClass = week.is_current_week ? 'current' : '';
+        const holdClass = week.direction === 'HOLD' ? 'hold' : '';
+        const downClass = week.direction === 'DOWN' ? 'down' : '';
+        
+        // 방향 아이콘
+        let directionIcon = '';
+        if (week.direction === 'UP') {
+            directionIcon = '📈';
+        } else if (week.direction === 'DOWN') {
+            directionIcon = '📉';
+        } else {
+            directionIcon = '➡️';
+        }
+        
+        // 변동률 표시
+        let changeText = '';
+        if (!week.is_current_week && week.total_change !== 0) {
+            const sign = week.total_change > 0 ? '+' : '';
+            changeText = `<span class="week-change ${directionClass}">${sign}${week.total_change}%</span>`;
+        }
+        
+        html += `
+            <div class="weekly-item ${currentClass} ${downClass} ${holdClass}">
+                <span class="week-label">${week.week_label}</span>
+                <div class="week-content">
+                    <div class="week-direction">
+                        <span class="week-direction-icon">${directionIcon}</span>
+                        <span class="week-direction-text ${directionClass}">${week.direction_text}</span>
+                    </div>
+                    <p class="week-summary">${week.summary}</p>
+                </div>
+                ${changeText}
+            </div>
+        `;
+    });
+    
+    weeklyList.innerHTML = html;
+}
