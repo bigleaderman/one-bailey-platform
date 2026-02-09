@@ -197,7 +197,7 @@ class MonthlyTrendResponse(BaseModel):
 def get_monthly_trend(db: Session = Depends(get_db)):
     """
     이번 달 시장 흐름 (최근 4주)
-    - 각 주의 actual_change 합산으로 상승/하락/보합 판단
+    - 각 주의 actual_change를 복리 계산으로 상승/하락/보합 판단
     - 주 단위: 월요일 ~ 일요일
     """
     from datetime import timedelta
@@ -217,15 +217,21 @@ def get_monthly_trend(db: Session = Depends(get_db)):
         week_monday = this_monday - timedelta(weeks=week_offset)
         week_sunday = week_monday + timedelta(days=6)
         
-        # 해당 주의 예측 데이터 조회
+        # 해당 주의 예측 데이터 조회 (날짜순 정렬)
         predictions = db.query(Prediction).filter(
             Prediction.prediction_date >= week_monday,
             Prediction.prediction_date <= week_sunday,
             Prediction.actual_change.isnot(None)  # 실제 변동률이 있는 것만
-        ).all()
+        ).order_by(Prediction.prediction_date).all()
         
-        # 주간 총 변동률 계산
-        total_change = sum(p.actual_change for p in predictions if p.actual_change) if predictions else 0
+        # 주간 총 변동률 계산 (복리 방식)
+        # 예: +1%, +2%, -1% → (1.01) * (1.02) * (0.99) = 1.0199 → +1.99%
+        cumulative = 1.0
+        for p in predictions:
+            if p.actual_change is not None:
+                cumulative *= (1 + p.actual_change / 100)
+        
+        total_change = (cumulative - 1) * 100  # 퍼센트로 변환
         
         # 방향 결정 (±0.5% 이내면 보합)
         if total_change > 0.5:
