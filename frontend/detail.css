@@ -1,0 +1,268 @@
+/* Detail Page Header */
+.back-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: #374151;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.back-btn:hover {
+    background: #f3f4f6;
+}
+
+.header-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* Detail Cards */
+.detail-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.title-icon {
+    font-size: 1.1rem;
+}
+
+.factor-count {
+    font-weight: 400;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+/* Summary Card */
+.summary-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 2px solid #bbf7d0;
+}
+
+.summary-card.down {
+    background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+    border-color: #fca5a5;
+}
+
+.summary-card.hold {
+    background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+    border-color: #d1d5db;
+}
+
+.summary-direction {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.summary-icon {
+    font-size: 2rem;
+}
+
+.summary-label {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #166534;
+}
+
+.summary-card.down .summary-label {
+    color: #991b1b;
+}
+
+.summary-card.hold .summary-label {
+    color: #374151;
+}
+
+.summary-confidence {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.summary-confidence span {
+    font-weight: 700;
+    color: #374151;
+}
+
+.summary-stars {
+    margin-bottom: 12px;
+}
+
+.summary-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #374151;
+}
+
+/* Actual Result */
+.actual-result {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.actual-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.actual-badge.correct {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.actual-badge.wrong {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* Indicators Grid */
+.indicators-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.indicator-item {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+}
+
+.indicator-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 6px;
+}
+
+.indicator-value {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.indicator-value.positive {
+    color: #16a34a;
+}
+
+.indicator-value.negative {
+    color: #dc2626;
+}
+
+/* Factor List */
+.factor-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.factor-list li {
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #374151;
+}
+
+.factor-list li:last-child {
+    margin-bottom: 0;
+}
+
+.factor-list.positive li {
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+}
+
+.factor-list.negative li {
+    background: #fef2f2;
+    border-left: 3px solid #ef4444;
+}
+
+/* Recent Grid */
+.recent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.recent-item {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.recent-item:hover {
+    background: #eff6ff;
+}
+
+.recent-date {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.recent-icon {
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+}
+
+.recent-dir {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.recent-stats {
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #3b82f6;
+    padding: 8px;
+    background: #eff6ff;
+    border-radius: 10px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .indicators-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .indicator-item {
+        padding: 10px 8px;
+    }
+
+    .indicator-value {
+        font-size: 1rem;
+    }
+
+    .summary-label {
+        font-size: 1.2rem;
+    }
+}
