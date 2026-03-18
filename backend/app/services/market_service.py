@@ -4,7 +4,7 @@
 from datetime import date, timedelta
 from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 
 from app.models import Prediction, MarketData
 from app.schemas.market import (
@@ -25,7 +25,10 @@ class MarketService:
         row = db.query(MarketData)\
             .filter(
                 MarketData.collection_meta['data_date'].astext <= target_date,
-                MarketData.collection_meta['collection_type'].astext != 'closing_price',
+                or_(
+                    MarketData.collection_meta['collection_type'].astext.is_(None),
+                    MarketData.collection_meta['collection_type'].astext != 'closing_price',
+                ),
                 MarketData.qqq_price.isnot(None),
             )\
             .order_by(desc(MarketData.collection_meta['data_date'].astext))\
