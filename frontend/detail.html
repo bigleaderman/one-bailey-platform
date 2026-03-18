@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneBailey - 예측 상세</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="detail.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <button class="back-btn" onclick="history.back()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <h1 class="header-title" id="headerDate">로딩 중...</h1>
+            <div style="width:40px"></div>
+        </header>
+
+        <main class="main-content">
+            <!-- 1. 예측 요약 카드 -->
+            <section class="detail-card summary-card" id="summaryCard">
+                <div class="summary-direction" id="summaryDirection">
+                    <span class="summary-icon" id="summaryIcon">📈</span>
+                    <div>
+                        <div class="summary-label" id="summaryLabel">상승 예상</div>
+                        <div class="summary-confidence">
+                            신뢰도 <span id="summaryConfidence">75%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="summary-stars" id="summaryStars"></div>
+                <p class="summary-text" id="summaryText">예측 요약 로딩 중...</p>
+                <!-- 실제 결과 (검증 완료 시) -->
+                <div class="actual-result" id="actualResult" style="display:none">
+                    <div class="actual-badge" id="actualBadge"></div>
+                </div>
+            </section>
+
+            <!-- 2. 주요 시장 지표 -->
+            <section class="detail-card">
+                <h3 class="card-title">주요 시장 지표</h3>
+                <div class="indicators-grid" id="indicatorsGrid">
+                    <div class="indicator-item">
+                        <span class="indicator-label">VIX</span>
+                        <span class="indicator-value" id="indVix">-</span>
+                    </div>
+                    <div class="indicator-item">
+                        <span class="indicator-label">NQ 선물</span>
+                        <span class="indicator-value" id="indNq">-</span>
+                    </div>
+                    <div class="indicator-item">
+                        <span class="indicator-label">10Y 금리</span>
+                        <span class="indicator-value" id="indRate">-</span>
+                    </div>
+                    <div class="indicator-item">
+                        <span class="indicator-label">QQQ</span>
+                        <span class="indicator-value" id="indQqq">-</span>
+                    </div>
+                    <div class="indicator-item">
+                        <span class="indicator-label">달러(DXY)</span>
+                        <span class="indicator-value" id="indDxy">-</span>
+                    </div>
+                    <div class="indicator-item">
+                        <span class="indicator-label">금</span>
+                        <span class="indicator-value" id="indGold">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. 상승 요인 -->
+            <section class="detail-card">
+                <h3 class="card-title">
+                    <span class="title-icon positive">📈</span>
+                    상승 요인 <span class="factor-count" id="keyCount">(0)</span>
+                </h3>
+                <ul class="factor-list positive" id="keyFactorsList">
+                    <li>로딩 중...</li>
+                </ul>
+            </section>
+
+            <!-- 4. 리스크 요인 -->
+            <section class="detail-card">
+                <h3 class="card-title">
+                    <span class="title-icon negative">⚠️</span>
+                    리스크 요인 <span class="factor-count" id="riskCount">(0)</span>
+                </h3>
+                <ul class="factor-list negative" id="riskFactorsList">
+                    <li>로딩 중...</li>
+                </ul>
+            </section>
+
+            <!-- 5. 최근 예측 기록 -->
+            <section class="detail-card">
+                <h3 class="card-title">최근 예측 기록</h3>
+                <div class="recent-grid" id="recentGrid">
+                    <!-- JS로 채움 -->
+                </div>
+                <div class="recent-stats" id="recentStats">
+                    로딩 중...
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>본 정보는 투자 참고용이며, 투자 손실에 대한 책임은 투자자 본인에게 있습니다.</p>
+            <p>&copy; 2025 OneBailey. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="detail.js"></script>
+</body>
+</html>

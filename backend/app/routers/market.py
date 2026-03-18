@@ -1,11 +1,13 @@
 """
 시장 관련 API 엔드포인트
 """
-from fastapi import APIRouter, Depends
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse
+from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse
 from app.services.market_service import MarketService
 
 
@@ -29,3 +31,17 @@ def get_market_indicators(db: Session = Depends(get_db)):
     - VIX, 나스닥 선물, 금리 등 6개 지표
     """
     return MarketService.get_market_indicators(db)
+
+
+@router.get("/date/{target_date}", response_model=DateMarketResponse)
+def get_market_for_date(target_date: str, db: Session = Depends(get_db)):
+    """특정 날짜의 시장 지표 (상세 페이지용)"""
+    try:
+        datetime.strptime(target_date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="날짜 형식: YYYY-MM-DD")
+
+    result = MarketService.get_market_for_date(db, target_date)
+    if not result:
+        raise HTTPException(status_code=404, detail="해당 날짜의 시장 데이터가 없습니다")
+    return result

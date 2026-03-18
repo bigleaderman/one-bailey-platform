@@ -38,3 +38,16 @@ class MarketIndicatorsResponse(BaseModel):
     """시장 지표 응답"""
     date: str
     indicators: List[MarketIndicator]
+
+
+class DateMarketResponse(BaseModel):
+    """날짜별 시장 지표 응답 (상세 페이지용)"""
+    qqq_price: Optional[float] = None
+    vix_level: Optional[float] = None
+    nq_future: Optional[float] = None
+    nq_change: Optional[float] = None
+    dxy_level: Optional[float] = None
+    dxy_change: Optional[float] = None
+    treasury_10y: Optional[float] = None
+    gold_price: Optional[float] = None
+    data_date: Optional[str] = None

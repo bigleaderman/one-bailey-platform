@@ -9,6 +9,7 @@ from datetime import date, datetime
 class TodayPredictionResponse(BaseModel):
     """오늘의 예측 응답"""
     date: str
+    date_iso: str
     direction: str
     direction_text: str
     confidence: float
@@ -32,6 +33,23 @@ class PredictionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PredictionDetailResponse(BaseModel):
+    """날짜 기반 예측 상세 응답"""
+    date: str
+    date_iso: str
+    direction: str
+    direction_text: str
+    confidence: float
+    confidence_percent: int
+    confidence_stars: int
+    summary: str
+    key_factors: List[str]
+    risk_factors: List[str]
+    actual_direction: Optional[str] = None
+    actual_change: Optional[float] = None
+    is_correct: Optional[bool] = None
 
 
 class PredictionHistoryItem(BaseModel):

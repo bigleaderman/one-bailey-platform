@@ -6,9 +6,12 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
+from datetime import datetime
+
 from app.schemas.prediction import (
     TodayPredictionResponse,
     PredictionResponse,
+    PredictionDetailResponse,
     PredictionHistoryResponse
 )
 from app.services.prediction_service import PredictionService
@@ -30,6 +33,20 @@ def get_today_prediction(db: Session = Depends(get_db)):
 def get_prediction_history(days: int = 7, db: Session = Depends(get_db)):
     """최근 예측 기록 + 적중률"""
     return PredictionService.get_prediction_history(db, days)
+
+
+@router.get("/date/{pred_date}", response_model=PredictionDetailResponse)
+def get_prediction_by_date(pred_date: str, db: Session = Depends(get_db)):
+    """날짜 기반 예측 상세 조회"""
+    try:
+        target = datetime.strptime(pred_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="날짜 형식: YYYY-MM-DD")
+
+    result = PredictionService.get_prediction_by_date(db, target)
+    if not result:
+        raise HTTPException(status_code=404, detail="해당 날짜의 예측이 없습니다")
+    return result
 
 
 @router.get("", response_model=List[PredictionResponse])

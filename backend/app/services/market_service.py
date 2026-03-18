@@ -11,13 +11,43 @@ from app.schemas.market import (
     WeeklyTrend,
     MonthlyTrendResponse,
     MarketIndicator,
-    MarketIndicatorsResponse
+    MarketIndicatorsResponse,
+    DateMarketResponse
 )
 
 
 class MarketService:
     """시장 데이터 서비스"""
-    
+
+    @staticmethod
+    def get_market_for_date(db: Session, target_date: str) -> Optional[DateMarketResponse]:
+        """특정 날짜의 시장 지표 조회"""
+        row = db.query(MarketData)\
+            .filter(
+                MarketData.collection_meta['data_date'].astext <= target_date,
+                MarketData.collection_meta['collection_type'].astext != 'closing_price',
+                MarketData.qqq_price.isnot(None),
+            )\
+            .order_by(desc(MarketData.collection_meta['data_date'].astext))\
+            .first()
+
+        if not row:
+            return None
+
+        meta = row.collection_meta or {}
+
+        return DateMarketResponse(
+            qqq_price=float(row.qqq_price) if row.qqq_price else None,
+            vix_level=float(row.vix_level) if row.vix_level else None,
+            nq_future=float(row.nq_future) if row.nq_future else None,
+            nq_change=float(row.nq_change) if row.nq_change else None,
+            dxy_level=float(row.dxy_level) if row.dxy_level else None,
+            dxy_change=float(row.dxy_change) if row.dxy_change else None,
+            treasury_10y=float(row.treasury_10y) if row.treasury_10y else None,
+            gold_price=float(row.gold_price) if row.gold_price else None,
+            data_date=meta.get('data_date'),
+        )
+
     @staticmethod
     def get_monthly_trend(db: Session) -> MonthlyTrendResponse:
         """

@@ -46,6 +46,7 @@ async function loadPrediction() {
  */
 function updateUI(data) {
     // 날짜
+    currentPredictionDate = data.date_iso;
     predictionDate.textContent = data.date;
     
     // 방향 판단
@@ -140,10 +141,14 @@ function toggleExpand() {
 }
 
 /**
- * 상세 보기 (추후 구현)
+ * 상세 페이지로 이동
  */
+let currentPredictionDate = null;
+
 function toggleDetails() {
-    alert('상세 분석 페이지는 준비 중입니다.');
+    if (currentPredictionDate) {
+        window.location.href = `/detail.html?date=${currentPredictionDate}`;
+    }
 }
 
 // 알림 버튼

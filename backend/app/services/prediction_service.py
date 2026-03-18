@@ -10,6 +10,7 @@ from app.models import Prediction
 from app.schemas.prediction import (
     TodayPredictionResponse,
     PredictionResponse,
+    PredictionDetailResponse,
     PredictionHistoryItem,
     PredictionHistoryResponse
 )
@@ -57,6 +58,7 @@ class PredictionService:
         
         return TodayPredictionResponse(
             date=prediction.prediction_date.strftime("%Y년 %m월 %d일"),
+            date_iso=prediction.prediction_date.isoformat(),
             direction=prediction.direction,
             direction_text=PredictionService.DIRECTION_MAP.get(prediction.direction, prediction.direction),
             confidence=prediction.confidence,
@@ -82,7 +84,43 @@ class PredictionService:
         return db.query(Prediction)\
             .filter(Prediction.id == prediction_id)\
             .first()
-    
+
+    @staticmethod
+    def get_prediction_by_date(db: Session, target_date: date) -> Optional[PredictionDetailResponse]:
+        """날짜 기반 예측 상세 조회"""
+        prediction = db.query(Prediction)\
+            .filter(Prediction.prediction_date == target_date)\
+            .first()
+
+        if not prediction:
+            return None
+
+        confidence_percent = int(prediction.confidence * 100) if prediction.confidence <= 1 else int(prediction.confidence)
+        confidence_stars = min(5, max(1, int(confidence_percent / 20)))
+
+        key_factors = prediction.key_factors if isinstance(prediction.key_factors, list) else []
+        risk_factors = prediction.risk_factors if isinstance(prediction.risk_factors, list) else []
+
+        is_correct = None
+        if prediction.actual_direction:
+            is_correct = prediction.direction == prediction.actual_direction
+
+        return PredictionDetailResponse(
+            date=prediction.prediction_date.strftime("%Y년 %m월 %d일"),
+            date_iso=prediction.prediction_date.isoformat(),
+            direction=prediction.direction,
+            direction_text=PredictionService.DIRECTION_MAP.get(prediction.direction, prediction.direction),
+            confidence=prediction.confidence,
+            confidence_percent=confidence_percent,
+            confidence_stars=confidence_stars,
+            summary=prediction.summary or "예측 요약이 없습니다.",
+            key_factors=key_factors,
+            risk_factors=risk_factors,
+            actual_direction=prediction.actual_direction,
+            actual_change=float(prediction.actual_change) if prediction.actual_change is not None else None,
+            is_correct=is_correct,
+        )
+
     @staticmethod
     def get_prediction_history(db: Session, days: int = 7) -> PredictionHistoryResponse:
         """

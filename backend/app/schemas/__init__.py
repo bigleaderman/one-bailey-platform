@@ -5,6 +5,7 @@ Pydantic 스키마 패키지
 from app.schemas.prediction import (
     TodayPredictionResponse,
     PredictionResponse,
+    PredictionDetailResponse,
     PredictionHistoryItem,
     PredictionHistoryResponse
 )
@@ -18,6 +19,7 @@ from app.schemas.market import (
 __all__ = [
     "TodayPredictionResponse",
     "PredictionResponse",
+    "PredictionDetailResponse",
     "PredictionHistoryItem",
     "PredictionHistoryResponse",
     "WeeklyTrend",
