@@ -31,7 +31,10 @@ class MarketService:
                 ),
                 MarketData.qqq_price.isnot(None),
             )\
-            .order_by(desc(MarketData.collection_meta['data_date'].astext))\
+            .order_by(
+                desc(MarketData.collection_meta['data_date'].astext),
+                desc(MarketData.timestamp),
+            )\
             .first()
 
         if not row:
