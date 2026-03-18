@@ -1,7 +1,8 @@
 """
 시장 데이터 모델
 """
-from sqlalchemy import Column, Integer, Float, DateTime, JSON
+from sqlalchemy import Column, Integer, Float, DateTime
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -41,6 +42,6 @@ class MarketData(Base):
     gold_price = Column(Float, nullable=True)
 
     # 메타데이터
-    collection_meta = Column(JSON, nullable=True)
+    collection_meta = Column(JSONB, nullable=True)
 
     created_at = Column(DateTime, server_default=func.now())
