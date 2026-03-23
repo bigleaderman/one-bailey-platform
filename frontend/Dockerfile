@@ -14,6 +14,9 @@ COPY styles.css /usr/share/nginx/html/
 COPY detail.html /usr/share/nginx/html/
 COPY detail.js /usr/share/nginx/html/
 COPY detail.css /usr/share/nginx/html/
+COPY history.html /usr/share/nginx/html/
+COPY history.js /usr/share/nginx/html/
+COPY history.css /usr/share/nginx/html/
 
 RUN chmod -R 755 /usr/share/nginx/html
 

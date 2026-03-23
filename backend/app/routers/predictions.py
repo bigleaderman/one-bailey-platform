@@ -12,7 +12,8 @@ from app.schemas.prediction import (
     TodayPredictionResponse,
     PredictionResponse,
     PredictionDetailResponse,
-    PredictionHistoryResponse
+    PredictionHistoryResponse,
+    HistoryListResponse
 )
 from app.services.prediction_service import PredictionService
 
@@ -33,6 +34,12 @@ def get_today_prediction(db: Session = Depends(get_db)):
 def get_prediction_history(days: int = 7, db: Session = Depends(get_db)):
     """최근 예측 기록 + 적중률"""
     return PredictionService.get_prediction_history(db, days)
+
+
+@router.get("/history/all", response_model=HistoryListResponse)
+def get_history_list(month: str = None, db: Session = Depends(get_db)):
+    """히스토리 페이지용 전체 예측 기록 (월별 필터 지원)"""
+    return PredictionService.get_history_list(db, month)
 
 
 @router.get("/date/{pred_date}", response_model=PredictionDetailResponse)

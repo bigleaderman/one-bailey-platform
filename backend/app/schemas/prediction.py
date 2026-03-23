@@ -67,3 +67,23 @@ class PredictionHistoryResponse(BaseModel):
     """예측 기록 응답"""
     history: List[PredictionHistoryItem]
     stats: dict
+
+
+class HistoryListItem(BaseModel):
+    """히스토리 페이지용 전체 기록 항목"""
+    date: str
+    date_iso: str
+    direction: str
+    direction_text: str
+    confidence_percent: int
+    actual_direction: Optional[str] = None
+    actual_change: Optional[float] = None
+    is_correct: Optional[bool] = None
+    summary: Optional[str] = None
+
+
+class HistoryListResponse(BaseModel):
+    """히스토리 페이지 응답"""
+    items: List[HistoryListItem]
+    total: int
+    stats: dict

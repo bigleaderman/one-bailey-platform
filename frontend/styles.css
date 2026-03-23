@@ -349,6 +349,40 @@ body {
     }
 }
 
+/* Nav Cards */
+.nav-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.nav-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    text-decoration: none;
+    color: #374151;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.nav-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.nav-icon {
+    font-size: 1.5rem;
+}
+
+.nav-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
 /* ============================================
    Monthly Trend (이번 달 시장 흐름)
    ============================================ */

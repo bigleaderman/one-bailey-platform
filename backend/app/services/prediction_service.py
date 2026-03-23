@@ -12,7 +12,9 @@ from app.schemas.prediction import (
     PredictionResponse,
     PredictionDetailResponse,
     PredictionHistoryItem,
-    PredictionHistoryResponse
+    PredictionHistoryResponse,
+    HistoryListItem,
+    HistoryListResponse
 )
 
 
@@ -182,5 +184,71 @@ class PredictionService:
                 "accuracy_30d": accuracy_30,
                 "total_30d": total_30,
                 "correct_30d": correct_30
+            }
+        )
+
+    @staticmethod
+    def get_history_list(db: Session, month: str = None) -> HistoryListResponse:
+        """히스토리 페이지용 전체 예측 기록"""
+        today = date.today()
+
+        query = db.query(Prediction)\
+            .filter(Prediction.prediction_date <= today)\
+            .order_by(desc(Prediction.prediction_date))
+
+        # 월별 필터
+        if month:
+            try:
+                year, mon = month.split("-")
+                from datetime import datetime as dt
+                start = dt(int(year), int(mon), 1).date()
+                if int(mon) == 12:
+                    end = dt(int(year) + 1, 1, 1).date()
+                else:
+                    end = dt(int(year), int(mon) + 1, 1).date()
+                query = query.filter(
+                    Prediction.prediction_date >= start,
+                    Prediction.prediction_date < end,
+                )
+            except (ValueError, TypeError):
+                pass
+
+        predictions = query.all()
+
+        items = []
+        correct_count = 0
+        validated_count = 0
+
+        for p in predictions:
+            confidence_percent = int(p.confidence * 100) if p.confidence <= 1 else int(p.confidence)
+
+            is_correct = None
+            if p.actual_direction:
+                is_correct = p.direction == p.actual_direction
+                validated_count += 1
+                if is_correct:
+                    correct_count += 1
+
+            items.append(HistoryListItem(
+                date=p.prediction_date.strftime("%Y년 %m월 %d일"),
+                date_iso=p.prediction_date.isoformat(),
+                direction=p.direction,
+                direction_text=PredictionService.DIRECTION_MAP.get(p.direction, p.direction),
+                confidence_percent=confidence_percent,
+                actual_direction=p.actual_direction,
+                actual_change=float(p.actual_change) if p.actual_change is not None else None,
+                is_correct=is_correct,
+                summary=p.summary[:80] + "..." if p.summary and len(p.summary) > 80 else p.summary,
+            ))
+
+        accuracy = round(correct_count / validated_count * 100, 1) if validated_count > 0 else 0
+
+        return HistoryListResponse(
+            items=items,
+            total=len(items),
+            stats={
+                "validated": validated_count,
+                "correct": correct_count,
+                "accuracy": accuracy,
             }
         )
