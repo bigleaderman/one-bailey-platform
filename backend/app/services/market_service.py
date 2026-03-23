@@ -593,29 +593,29 @@ class MarketService:
 
                 # 쉬운 해설
                 if name == "CPI":
-                    desc = f"물가가 전년 대비 {yoy:+.1f}% 변동" if yoy else "물가 데이터"
-                    if yoy and yoy > 3: desc += " (높은 수준)"
-                    elif yoy and yoy < 2.5: desc += " (안정적)"
+                    econ_desc = f"물가가 전년 대비 {yoy:+.1f}% 변동" if yoy else "물가 데이터"
+                    if yoy and yoy > 3: econ_desc += " (높은 수준)"
+                    elif yoy and yoy < 2.5: econ_desc += " (안정적)"
                 elif name == "Core_PCE":
-                    desc = f"Fed 목표(2%) 대비 {yoy:.1f}% 수준" if yoy else "핵심 물가 데이터"
+                    econ_desc = f"Fed 목표(2%) 대비 {yoy:.1f}% 수준" if yoy else "핵심 물가 데이터"
                 elif name == "Unemployment":
-                    desc = f"실업률 {val:.1f}%" if val else "고용 데이터"
-                    if val and val < 4: desc += " (양호)"
-                    elif val and val >= 5: desc += " (악화)"
+                    econ_desc = f"실업률 {val:.1f}%" if val else "고용 데이터"
+                    if val and val < 4: econ_desc += " (양호)"
+                    elif val and val >= 5: econ_desc += " (악화)"
                 elif name == "NFP":
-                    desc = f"전월 대비 {change:+.0f}K 변동" if change else "고용 데이터"
+                    econ_desc = f"전월 대비 {change:+.0f}K 변동" if change else "고용 데이터"
                 elif name == "GDP":
-                    desc = f"경제 성장률 {yoy:+.1f}%" if yoy else "성장 데이터"
-                    if yoy and yoy > 2: desc += " (양호)"
-                    elif yoy and yoy < 0: desc += " (위축)"
+                    econ_desc = f"경제 성장률 {yoy:+.1f}%" if yoy else "성장 데이터"
+                    if yoy and yoy > 2: econ_desc += " (양호)"
+                    elif yoy and yoy < 0: econ_desc += " (위축)"
                 else:
-                    desc = ""
+                    econ_desc = ""
 
                 display_val = yoy if name in ("CPI", "Core_PCE", "GDP") else val
 
                 economic.append(EconomicIndicatorCard(
                     category=category, name=name, label=label,
-                    value=display_val, change=change, unit=unit, description=desc,
+                    value=display_val, change=change, unit=unit, description=econ_desc,
                 ))
 
         return MarketSummaryResponse(
