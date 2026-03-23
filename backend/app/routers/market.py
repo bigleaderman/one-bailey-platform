@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse
+from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse, MarketTrendResponse, MarketSummaryResponse
 from app.services.market_service import MarketService
 
 
@@ -31,6 +31,21 @@ def get_market_indicators(db: Session = Depends(get_db)):
     - VIX, 나스닥 선물, 금리 등 6개 지표
     """
     return MarketService.get_market_indicators(db)
+
+
+@router.get("/trend", response_model=MarketTrendResponse)
+def get_market_trend(days: int = 30, db: Session = Depends(get_db)):
+    """최근 N일 시계열 데이터 (차트용)"""
+    return MarketService.get_market_trend(db, min(days, 90))
+
+
+@router.get("/summary", response_model=MarketSummaryResponse)
+def get_market_summary(db: Session = Depends(get_db)):
+    """시장 종합 상태 (온도계 + 지표 카드 + 경제 지표)"""
+    try:
+        return MarketService.get_market_summary(db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/date/{target_date}", response_model=DateMarketResponse)

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneBailey - 시장 현황</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="market.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <a href="/" class="back-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>
+            <h1 class="header-title">시장 현황</h1>
+            <div style="width:40px"></div>
+        </header>
+
+        <main class="main-content">
+            <!-- 1. 시장 온도계 -->
+            <section class="temp-card" id="tempCard">
+                <h3 class="card-title">시장 온도계</h3>
+                <div class="temp-gauge">
+                    <div class="temp-bar">
+                        <div class="temp-fill" id="tempFill"></div>
+                        <div class="temp-pointer" id="tempPointer"></div>
+                    </div>
+                    <div class="temp-labels">
+                        <span>😱 공포</span>
+                        <span>😐 중립</span>
+                        <span>🤑 탐욕</span>
+                    </div>
+                </div>
+                <div class="temp-result">
+                    <span class="temp-emoji" id="tempEmoji">😐</span>
+                    <span class="temp-label" id="tempLabel">로딩 중...</span>
+                </div>
+                <p class="temp-desc" id="tempDesc">데이터를 분석하고 있습니다.</p>
+            </section>
+
+            <!-- 2. QQQ 가격 추세 차트 -->
+            <section class="chart-card">
+                <h3 class="card-title">QQQ 가격 추세 (30일)</h3>
+                <div class="chart-container">
+                    <canvas id="qqqChart"></canvas>
+                </div>
+            </section>
+
+            <!-- 3. VIX 추세 차트 -->
+            <section class="chart-card">
+                <h3 class="card-title">VIX 공포지수 추세 (30일)</h3>
+                <div class="chart-container">
+                    <canvas id="vixChart"></canvas>
+                </div>
+            </section>
+
+            <!-- 4. 주요 지표 카드 -->
+            <section class="indicators-section">
+                <h3 class="section-title">주요 지표</h3>
+                <div class="indicator-cards" id="indicatorCards">
+                    <!-- JS로 채움 -->
+                </div>
+            </section>
+
+            <!-- 5. 경제 지표 -->
+            <section class="economic-section">
+                <h3 class="section-title">경제 지표</h3>
+                <div class="economic-cards" id="economicCards">
+                    <!-- JS로 채움 -->
+                </div>
+            </section>
+
+            <div class="updated-at" id="updatedAt"></div>
+        </main>
+
+        <footer class="footer">
+            <p>본 정보는 투자 참고용이며, 투자 손실에 대한 책임은 투자자 본인에게 있습니다.</p>
+            <p>&copy; 2025 OneBailey. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="market.js"></script>
+</body>
+</html>
