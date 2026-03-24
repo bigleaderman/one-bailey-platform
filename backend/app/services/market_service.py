@@ -685,6 +685,58 @@ class MarketService:
             updated_at=meta.get('data_date', ''),
         )
 
+    # 시장 지표 해설 데이터
+    MARKET_EXPLAINER = {
+        'vix': {
+            'label': 'VIX 공포지수',
+            'field': 'vix_level',
+            'unit': '',
+            'what_is': '향후 30일간 S&P 500의 예상 변동성을 나타내는 지수입니다. "공포 지수"라고도 불립니다.',
+            'why_matters': 'VIX가 높으면 시장이 불안하다는 뜻입니다. 20 이하면 안정적, 30 이상이면 공포 수준으로 큰 변동이 예상됩니다.',
+            'thresholds': [(15, 'good', '매우 안정'), (20, 'good', '안정'), (25, 'neutral', '보통'), (30, 'bad', '불안'), (999, 'bad', '공포')],
+        },
+        'treasury_10y': {
+            'label': '10년물 국채 금리',
+            'field': 'treasury_10y',
+            'unit': '%',
+            'what_is': '미국 정부가 10년간 빌리는 돈에 대한 이자율입니다. 시장의 장기 금리 기대를 반영합니다.',
+            'why_matters': '금리가 오르면 미래 수익의 현재 가치가 줄어들어 기술주 같은 성장주에 부정적입니다.',
+            'thresholds': [(3.5, 'good', '낮음'), (4.5, 'neutral', '보통'), (999, 'bad', '높음')],
+        },
+        'hy_spread': {
+            'label': 'HY 스프레드 (하이일드)',
+            'field': 'hy_spread',
+            'unit': '%',
+            'what_is': '고위험 회사채와 국채의 금리 차이입니다. 기업의 부도 위험에 대한 시장의 걱정을 보여줍니다.',
+            'why_matters': 'HY 스프레드가 급등하면 금융 위기의 전조일 수 있습니다. 2020년 코로나, 2022년 하락장 때 모두 급등했습니다.',
+            'thresholds': [(3.0, 'good', '안정'), (4.5, 'neutral', '보통'), (999, 'bad', '위험')],
+        },
+        'real_rate': {
+            'label': '실질금리 (10Y TIPS)',
+            'field': 'real_rate_10y',
+            'unit': '%',
+            'what_is': '명목금리에서 인플레이션 기대를 뺀 실질적인 자금 비용입니다.',
+            'why_matters': '기술주 밸류에이션에 가장 직접적인 영향을 미칩니다. 같은 명목금리라도 실질금리가 다르면 시장 반응이 완전히 다릅니다.',
+            'thresholds': [(1.0, 'good', '낮음'), (2.0, 'neutral', '보통'), (999, 'bad', '높음')],
+        },
+        'dxy': {
+            'label': '달러 인덱스 (DXY)',
+            'field': 'dxy_level',
+            'unit': '',
+            'what_is': '유로, 엔 등 주요 통화 대비 달러의 가치를 측정하는 지수입니다.',
+            'why_matters': '달러가 강해지면 미국 기업의 해외 수익이 줄고, 신흥국 자금이 빠져나가 글로벌 위험자산에 부정적입니다.',
+            'thresholds': None,  # 변화율 기반 판단
+        },
+        'gold': {
+            'label': '금 가격',
+            'field': 'gold_price',
+            'unit': '$',
+            'what_is': '안전자산의 대표격인 금의 국제 시세입니다.',
+            'why_matters': '금 가격이 급등하면 투자자들이 위험을 회피하고 안전자산으로 이동하는 신호입니다. 주식에 부정적일 수 있습니다.',
+            'thresholds': None,
+        },
+    }
+
     # 경제 지표 해설 데이터
     ECON_EXPLAINER = {
         'CPI': {
@@ -865,5 +917,107 @@ class MarketService:
             what_is=explainer['what_is'],
             why_matters=explainer['why_matters'],
             current_meaning=meaning,
+            history=history,
+        )
+
+    @staticmethod
+    def get_market_indicator_detail(db: Session, indicator_name: str):
+        """시장 지표 상세 (해설 + 30일 시계열)"""
+        from app.schemas.market import MarketIndicatorDetailResponse
+
+        explainer = MarketService.MARKET_EXPLAINER.get(indicator_name)
+        if not explainer:
+            return None
+
+        field = explainer['field']
+
+        # 최근 30일 시계열
+        rows = db.query(MarketData)\
+            .filter(
+                or_(
+                    MarketData.collection_meta['collection_type'].astext.is_(None),
+                    MarketData.collection_meta['collection_type'].astext != 'closing_price',
+                ),
+                MarketData.qqq_price.isnot(None),
+            )\
+            .order_by(desc(MarketData.timestamp))\
+            .limit(30)\
+            .all()
+
+        if not rows:
+            return None
+
+        history = []
+        for row in reversed(rows):
+            meta = row.collection_meta or {}
+            val = getattr(row, field, None)
+            history.append(TrendDataPoint(
+                date=meta.get('data_date', ''),
+                qqq_price=float(row.qqq_price) if row.qqq_price else None,
+                vix_level=float(row.vix_level) if row.vix_level else None,
+                treasury_10y=float(row.treasury_10y) if row.treasury_10y else None,
+                dxy_level=float(row.dxy_level) if row.dxy_level else None,
+                gold_price=float(row.gold_price) if row.gold_price else None,
+                wti_oil=float(row.wti_oil) if row.wti_oil else None,
+            ))
+
+        # 최신값
+        current = rows[0]
+        current_val = float(getattr(current, field)) if getattr(current, field, None) is not None else None
+
+        # 전일 대비 변화
+        prev = rows[1] if len(rows) > 1 else None
+        prev_val = float(getattr(prev, field)) if prev and getattr(prev, field, None) is not None else None
+        change = round(current_val - prev_val, 3) if current_val is not None and prev_val is not None else None
+
+        # 상태 판단
+        thresholds = explainer.get('thresholds')
+        if thresholds and current_val is not None:
+            status, status_text = "neutral", "보통"
+            for threshold, st, st_text in thresholds:
+                if current_val < threshold:
+                    status, status_text = st, st_text
+                    break
+        elif indicator_name == 'dxy':
+            if change is not None:
+                if change < -0.3: status, status_text = "good", "약세"
+                elif change > 0.3: status, status_text = "bad", "강세"
+                else: status, status_text = "neutral", "보합"
+            else:
+                status, status_text = "neutral", "데이터 없음"
+        elif indicator_name == 'gold':
+            if change is not None:
+                if change > 1: status, status_text = "bad", "급등"
+                elif change > 0: status, status_text = "neutral", "상승"
+                else: status, status_text = "good", "하락"
+            else:
+                status, status_text = "neutral", "데이터 없음"
+        else:
+            status, status_text = "neutral", "참고"
+
+        # 현재 의미 해설
+        meanings = {
+            'vix': lambda v: f"VIX {v:.1f}로 {'시장이 매우 불안합니다. 큰 변동에 대비하세요.' if v >= 30 else '변동성이 높은 상태입니다.' if v >= 25 else '시장이 비교적 안정적입니다.' if v >= 20 else '시장이 매우 안정적입니다.'}",
+            'treasury_10y': lambda v: f"10년물 금리 {v:.3f}%로 {'기술주에 상당한 부담입니다.' if v >= 4.5 else '보통 수준으로 큰 영향은 제한적입니다.' if v >= 3.5 else '낮은 수준으로 성장주에 유리합니다.'}",
+            'hy_spread': lambda v: f"HY 스프레드 {v:.2f}%로 {'신용 시장에 심각한 스트레스가 있습니다.' if v >= 4.5 else '보통 수준으로 큰 우려는 없습니다.' if v >= 3.0 else '신용 시장이 안정적이고 투자 심리가 양호합니다.'}",
+            'real_rate': lambda v: f"실질금리 {v:.3f}%로 {'기술주 밸류에이션에 큰 부담이 됩니다.' if v >= 2.0 else '보통 수준입니다.' if v >= 1.0 else '성장주/기술주에 유리한 환경입니다.'}",
+            'dxy': lambda v: f"달러 지수가 {'강세' if change and change > 0 else '약세'} 흐름으로, {'위험자산에 부정적' if change and change > 0.3 else '위험자산 투자에 유리' if change and change < -0.3 else '큰 영향은 없는'} 환경입니다.",
+            'gold': lambda v: f"금 가격 ${v:,.0f}로 {'안전자산 수요가 급증하고 있습니다.' if change and change > 1 else '소폭 상승세입니다.' if change and change > 0 else '위험자산 선호가 나타나고 있습니다.'}",
+        }
+
+        meaning_func = meanings.get(indicator_name)
+        current_meaning = meaning_func(current_val) if meaning_func and current_val is not None else "데이터를 확인하세요."
+
+        return MarketIndicatorDetailResponse(
+            name=indicator_name,
+            label=explainer['label'],
+            current_value=current_val,
+            change=change,
+            unit=explainer['unit'],
+            status=status,
+            status_text=status_text,
+            what_is=explainer['what_is'],
+            why_matters=explainer['why_matters'],
+            current_meaning=current_meaning,
             history=history,
         )

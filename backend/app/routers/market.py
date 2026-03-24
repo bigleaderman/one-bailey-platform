@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse, MarketTrendResponse, MarketSummaryResponse, EconomicDetailResponse
+from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse, MarketTrendResponse, MarketSummaryResponse, MarketIndicatorDetailResponse, EconomicDetailResponse
 from app.services.market_service import MarketService
 
 
@@ -46,6 +46,15 @@ def get_market_summary(db: Session = Depends(get_db)):
         return MarketService.get_market_summary(db)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/indicator/{indicator_name}", response_model=MarketIndicatorDetailResponse)
+def get_market_indicator_detail(indicator_name: str, db: Session = Depends(get_db)):
+    """시장 지표 상세 (해설 + 시계열)"""
+    result = MarketService.get_market_indicator_detail(db, indicator_name)
+    if not result:
+        raise HTTPException(status_code=404, detail="해당 시장 지표를 찾을 수 없습니다")
+    return result
 
 
 @router.get("/economic/{indicator_name}", response_model=EconomicDetailResponse)

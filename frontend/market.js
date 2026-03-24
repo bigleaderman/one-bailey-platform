@@ -70,7 +70,7 @@ function renderIndicators(indicators) {
         const changeStr = ind.change !== null ? formatChange(ind.change, ind.name) : '';
 
         return `
-            <div class="ind-card ${statusClass}">
+            <div class="ind-card ${statusClass} clickable" onclick="openIndicatorDetail('${ind.name}')">
                 <div class="ind-header">
                     <span class="ind-label">${ind.label}</span>
                     <span class="ind-trend ${ind.trend}">${ind.trend_text}</span>
@@ -95,6 +95,132 @@ function formatChange(change, name) {
     if (name === 'treasury_10y') return `전일 대비 ${sign}${change.toFixed(3)}%p`;
     if (name === 'vix') return `전일 대비 ${sign}${change.toFixed(2)}`;
     return `전일 대비 ${sign}${change.toFixed(2)}%`;
+}
+
+// ============================================
+// 시장 지표 상세 모달
+// ============================================
+let indDetailChart = null;
+
+async function openIndicatorDetail(name) {
+    try {
+        const res = await fetch(`/api/market/indicator/${name}`);
+        if (!res.ok) throw new Error('데이터 없음');
+        const data = await res.json();
+        showIndicatorModal(data);
+    } catch (e) {
+        console.error('Indicator detail error:', e);
+    }
+}
+
+function showIndicatorModal(data) {
+    const existing = document.getElementById('econModal');
+    if (existing) existing.remove();
+
+    const statusColors = { good: '#16a34a', neutral: '#f59e0b', bad: '#dc2626' };
+    const statusColor = statusColors[data.status] || '#6b7280';
+    const valueStr = data.current_value !== null ? formatValue(data.current_value, data.name) : '-';
+    const changeStr = data.change !== null ? formatChange(data.change, data.name) : '';
+
+    const modal = document.createElement('div');
+    modal.id = 'econModal';
+    modal.className = 'modal-overlay';
+    modal.onclick = function(e) { if (e.target === modal) closeIndicatorModal(); };
+
+    // 차트에 사용할 필드 매핑
+    const fieldMap = {
+        'vix': 'vix_level', 'treasury_10y': 'treasury_10y',
+        'hy_spread': null, 'real_rate': null,
+        'dxy': 'dxy_level', 'gold': 'gold_price'
+    };
+
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${data.label}</h3>
+                <button class="modal-close" onclick="closeIndicatorModal()">✕</button>
+            </div>
+            <div class="modal-status" style="border-left: 4px solid ${statusColor}">
+                <div class="modal-status-row">
+                    <span class="modal-value">${valueStr}</span>
+                    <span class="modal-badge" style="background: ${statusColor}20; color: ${statusColor}">${data.status_text}</span>
+                </div>
+                ${changeStr ? `<div style="font-size:0.85rem;color:#6b7280;margin-bottom:8px">${changeStr}</div>` : ''}
+                <p class="modal-meaning">${data.current_meaning}</p>
+            </div>
+            <div class="modal-section">
+                <h4>📖 이 지표는?</h4>
+                <p>${data.what_is}</p>
+            </div>
+            <div class="modal-section">
+                <h4>💡 왜 중요한가요?</h4>
+                <p>${data.why_matters}</p>
+            </div>
+            <div class="modal-section">
+                <h4>📈 30일 추세</h4>
+                <div class="modal-chart-container">
+                    <canvas id="indDetailChart"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    renderIndicatorDetailChart(data, fieldMap[data.name]);
+}
+
+function closeIndicatorModal() {
+    const modal = document.getElementById('econModal');
+    if (modal) modal.remove();
+    document.body.style.overflow = '';
+    if (indDetailChart) { indDetailChart.destroy(); indDetailChart = null; }
+}
+
+function renderIndicatorDetailChart(data, field) {
+    const ctx = document.getElementById('indDetailChart').getContext('2d');
+    const history = data.history;
+    const labels = history.map(h => h.date ? h.date.slice(5) : '');
+
+    // 필드에서 값 추출
+    let values;
+    if (field) {
+        values = history.map(h => h[field]);
+    } else {
+        // hy_spread, real_rate는 history에 직접 없으므로 current_value만 표시
+        // history의 모든 TrendDataPoint에는 해당 필드가 없으니 빈 차트
+        values = history.map(() => null);
+    }
+
+    const color = data.name === 'vix' || data.name === 'hy_spread' ? '#ef4444' : '#3b82f6';
+
+    indDetailChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: data.label,
+                data: values,
+                borderColor: color,
+                backgroundColor: color + '1A',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 10 } } },
+                y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 } } }
+            }
+        }
+    });
 }
 
 // ============================================

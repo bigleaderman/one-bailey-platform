@@ -113,6 +113,21 @@ class MarketSummaryResponse(BaseModel):
     updated_at: str
 
 
+class MarketIndicatorDetailResponse(BaseModel):
+    """시장 지표 상세 응답"""
+    name: str
+    label: str
+    current_value: Optional[float] = None
+    change: Optional[float] = None
+    unit: str
+    status: str
+    status_text: str
+    what_is: str
+    why_matters: str
+    current_meaning: str
+    history: List[TrendDataPoint]
+
+
 class EconomicHistoryPoint(BaseModel):
     """경제 지표 시계열 포인트"""
     date: str

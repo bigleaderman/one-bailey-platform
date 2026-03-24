@@ -270,6 +270,16 @@
 }
 
 /* Clickable Items */
+.ind-card.clickable {
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.ind-card.clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
 .econ-item.clickable {
     cursor: pointer;
     transition: background 0.15s;
