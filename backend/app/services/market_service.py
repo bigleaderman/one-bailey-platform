@@ -694,6 +694,16 @@ class MarketService:
         """경제 지표 상세 정보 + 시계열"""
         from app.schemas.market import EconomicDetailResponse, EconomicHistoryPoint
         from sqlalchemy import text as sql_text
+        import math
+
+        def _safe_float(v):
+            """NaN/Inf를 None으로 변환"""
+            if v is None:
+                return None
+            f = float(v)
+            if math.isnan(f) or math.isinf(f):
+                return None
+            return f
 
         explainer = MarketService.ECON_EXPLAINER.get(indicator_name)
         if not explainer:
@@ -713,16 +723,16 @@ class MarketService:
         history = [
             EconomicHistoryPoint(
                 date=str(r[0]),
-                value=float(r[1]) if r[1] else None,
-                yoy_change=float(r[2]) if r[2] else None,
+                value=_safe_float(r[1]),
+                yoy_change=_safe_float(r[2]),
             )
             for r in rows
         ]
 
         # 최신값
         latest = rows[-1]
-        current_value = float(latest[1]) if latest[1] else None
-        current_yoy = float(latest[2]) if latest[2] else None
+        current_value = _safe_float(latest[1])
+        current_yoy = _safe_float(latest[2])
 
         # 상태 판단 + 현재 의미 해설
         if indicator_name in ('CPI', 'Core_CPI', 'PCE', 'Core_PCE'):
