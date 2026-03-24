@@ -37,6 +37,16 @@ class MarketData(Base):
     spread_2_10y = Column(Float, nullable=True)
     fed_funds_rate = Column(Float, nullable=True)
     
+    # 변동성
+    vix3m_level = Column(Float, nullable=True)
+
+    # 신용/리스크
+    hy_spread = Column(Float, nullable=True)
+    ig_spread = Column(Float, nullable=True)
+    real_rate_10y = Column(Float, nullable=True)
+    spread_3m_10y = Column(Float, nullable=True)
+    jobless_claims = Column(Float, nullable=True)
+
     # 원자재
     wti_oil = Column(Float, nullable=True)
     gold_price = Column(Float, nullable=True)

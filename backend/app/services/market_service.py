@@ -476,6 +476,36 @@ class MarketService:
         else:
             gold_status, gold_desc = "neutral", "데이터 없음"
 
+        # HY 스프레드 카드
+        hy_val = _f(current.hy_spread)
+        hy_prev = _f(prev.hy_spread) if prev and hasattr(prev, 'hy_spread') else None
+        hy_change = round(hy_val - hy_prev, 2) if hy_val is not None and hy_prev is not None else None
+        hy_trend, hy_trend_text = _trend_info(hy_change)
+        if hy_val is not None:
+            if hy_val < 3.0:
+                hy_status, hy_desc = "good", "신용 시장이 안정적입니다. 투자자들이 위험을 감수하고 있어요."
+            elif hy_val < 4.5:
+                hy_status, hy_desc = "neutral", "신용 스프레드가 보통 수준입니다."
+            else:
+                hy_status, hy_desc = "bad", "신용 시장이 불안합니다. 기업 부도 위험을 경계하고 있어요."
+        else:
+            hy_status, hy_desc = "neutral", "데이터 없음"
+
+        # 실질금리 카드
+        real_val = _f(current.real_rate_10y)
+        real_prev = _f(prev.real_rate_10y) if prev and hasattr(prev, 'real_rate_10y') else None
+        real_change = round(real_val - real_prev, 3) if real_val is not None and real_prev is not None else None
+        real_trend, real_trend_text = _trend_info(real_change)
+        if real_val is not None:
+            if real_val < 1.0:
+                real_status, real_desc = "good", "실질금리가 낮아 성장주/기술주에 유리한 환경입니다."
+            elif real_val < 2.0:
+                real_status, real_desc = "neutral", "실질금리가 보통 수준입니다."
+            else:
+                real_status, real_desc = "bad", "실질금리가 높아 기술주 밸류에이션에 부담됩니다."
+        else:
+            real_status, real_desc = "neutral", "데이터 없음"
+
         indicators = [
             IndicatorCard(
                 name="vix", label="VIX 공포지수", value=vix_val,
@@ -488,6 +518,18 @@ class MarketService:
                 change=t10y_change, unit="%",
                 trend=t10y_trend, trend_text=t10y_trend_text,
                 status=t10y_status, description=t10y_desc,
+            ),
+            IndicatorCard(
+                name="hy_spread", label="HY 스프레드", value=hy_val,
+                change=hy_change, unit="%",
+                trend=hy_trend, trend_text=hy_trend_text,
+                status=hy_status, description=hy_desc,
+            ),
+            IndicatorCard(
+                name="real_rate", label="실질금리(10Y)", value=real_val,
+                change=real_change, unit="%",
+                trend=real_trend, trend_text=real_trend_text,
+                status=real_status, description=real_desc,
             ),
             IndicatorCard(
                 name="dxy", label="달러(DXY)", value=dxy_val,
@@ -534,6 +576,18 @@ class MarketService:
             else: score -= 15
             factors += 1
 
+        if hy_val is not None:
+            if hy_val < 3.0: score += 10
+            elif hy_val < 4.5: score += 0
+            else: score -= 15
+            factors += 1
+
+        if real_val is not None:
+            if real_val < 1.0: score += 10
+            elif real_val < 2.0: score += 0
+            else: score -= 10
+            factors += 1
+
         score = max(0, min(100, score))
 
         if score >= 75:
@@ -556,8 +610,14 @@ class MarketService:
             if nq_change > 0: parts.append("선물은 강세")
             else: parts.append("선물은 약세")
         if t10y_val is not None:
-            if t10y_val >= 4.5: parts.append("금리 부담이 있습니다")
-            else: parts.append("금리는 보통 수준입니다")
+            if t10y_val >= 4.5: parts.append("금리 부담이 있고")
+            else: parts.append("금리는 보통 수준이고")
+        if hy_val is not None:
+            if hy_val >= 4.5: parts.append("신용 시장이 불안합니다")
+            elif hy_val < 3.0: parts.append("신용 시장은 안정적입니다")
+            else: parts.append("신용 스프레드는 보통입니다")
+        else:
+            parts.append("시장을 종합적으로 판단합니다")
 
         temp_desc = ", ".join(parts) + "." if parts else "시장 데이터를 분석 중입니다."
 
