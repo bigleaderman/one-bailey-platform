@@ -111,3 +111,25 @@ class MarketSummaryResponse(BaseModel):
     indicators: List[IndicatorCard]
     economic: List[EconomicIndicatorCard]
     updated_at: str
+
+
+class EconomicHistoryPoint(BaseModel):
+    """경제 지표 시계열 포인트"""
+    date: str
+    value: Optional[float] = None
+    yoy_change: Optional[float] = None
+
+
+class EconomicDetailResponse(BaseModel):
+    """경제 지표 상세 응답"""
+    name: str
+    label: str
+    current_value: Optional[float] = None
+    current_yoy: Optional[float] = None
+    unit: str
+    status: str
+    status_text: str
+    what_is: str
+    why_matters: str
+    current_meaning: str
+    history: List[EconomicHistoryPoint]

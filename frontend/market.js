@@ -126,7 +126,7 @@ function renderEconomic(economic) {
         items.forEach(item => {
             const valueStr = item.value !== null ? `${item.value.toFixed(1)}${item.unit}` : '-';
             html += `
-                <div class="econ-item">
+                <div class="econ-item clickable" onclick="openEconomicDetail('${item.name}')">
                     <div class="econ-item-header">
                         <span class="econ-name">${item.label}</span>
                         <span class="econ-value">${valueStr}</span>
@@ -199,6 +199,144 @@ function renderQQQChart(data) {
                     ticks: {
                         callback: function(v) { return '$' + v; },
                         font: { size: 11 }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ============================================
+// 경제 지표 상세 모달
+// ============================================
+let econDetailChart = null;
+
+async function openEconomicDetail(name) {
+    try {
+        const res = await fetch(`/api/market/economic/${name}`);
+        if (!res.ok) throw new Error('데이터 없음');
+        const data = await res.json();
+        showEconModal(data);
+    } catch (e) {
+        console.error('Economic detail error:', e);
+    }
+}
+
+function showEconModal(data) {
+    // 기존 모달 제거
+    const existing = document.getElementById('econModal');
+    if (existing) existing.remove();
+
+    const statusColors = { good: '#16a34a', neutral: '#f59e0b', bad: '#dc2626' };
+    const statusColor = statusColors[data.status] || '#6b7280';
+
+    const valueStr = data.current_value !== null ? `${data.current_value.toFixed(1)}${data.unit}` : '-';
+
+    const modal = document.createElement('div');
+    modal.id = 'econModal';
+    modal.className = 'modal-overlay';
+    modal.onclick = function(e) { if (e.target === modal) closeEconModal(); };
+
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>${data.label}</h3>
+                <button class="modal-close" onclick="closeEconModal()">✕</button>
+            </div>
+
+            <div class="modal-status" style="border-left: 4px solid ${statusColor}">
+                <div class="modal-status-row">
+                    <span class="modal-value">${valueStr}</span>
+                    <span class="modal-badge" style="background: ${statusColor}20; color: ${statusColor}">${data.status_text}</span>
+                </div>
+                <p class="modal-meaning">${data.current_meaning}</p>
+            </div>
+
+            <div class="modal-section">
+                <h4>📖 이 지표는?</h4>
+                <p>${data.what_is}</p>
+            </div>
+
+            <div class="modal-section">
+                <h4>💡 왜 중요한가요?</h4>
+                <p>${data.why_matters}</p>
+            </div>
+
+            <div class="modal-section">
+                <h4>📈 추세</h4>
+                <div class="modal-chart-container">
+                    <canvas id="econDetailChart"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    // 차트 렌더링
+    renderEconDetailChart(data);
+}
+
+function closeEconModal() {
+    const modal = document.getElementById('econModal');
+    if (modal) modal.remove();
+    document.body.style.overflow = '';
+    if (econDetailChart) {
+        econDetailChart.destroy();
+        econDetailChart = null;
+    }
+}
+
+function renderEconDetailChart(data) {
+    const ctx = document.getElementById('econDetailChart').getContext('2d');
+    const history = data.history;
+
+    const labels = history.map(h => h.date.slice(0, 7)); // YYYY-MM
+    const isYoyType = ['CPI', 'Core_CPI', 'PCE', 'Core_PCE', 'GDP', 'Real_GDP'].includes(data.name);
+    const values = history.map(h => isYoyType ? h.yoy_change : h.value);
+    const label = isYoyType ? 'YoY 변화율 (%)' : data.label;
+
+    econDetailChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: label,
+                data: values,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const v = ctx.parsed.y;
+                            return isYoyType ? `${v.toFixed(1)}%` : v.toFixed(1);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 }, maxTicksLimit: 8 }
+                },
+                y: {
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: {
+                        font: { size: 10 },
+                        callback: function(v) { return isYoyType ? v + '%' : v; }
                     }
                 }
             }

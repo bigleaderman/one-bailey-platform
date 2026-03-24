@@ -624,3 +624,176 @@ class MarketService:
             economic=economic,
             updated_at=meta.get('data_date', ''),
         )
+
+    # 경제 지표 해설 데이터
+    ECON_EXPLAINER = {
+        'CPI': {
+            'label': '소비자물가지수 (CPI)',
+            'unit': '%',
+            'what_is': '우리가 일상에서 사는 물건과 서비스의 평균 가격 변화를 측정하는 지수입니다.',
+            'why_matters': 'CPI가 오르면 물가가 오르는 것(인플레이션)이고, Fed가 금리를 올릴 수 있어 주식에 부정적입니다.',
+        },
+        'Core_CPI': {
+            'label': '근원 소비자물가 (Core CPI)',
+            'unit': '%',
+            'what_is': '변동이 큰 식품과 에너지를 제외한 물가 지수입니다. 물가의 기조적 흐름을 보여줍니다.',
+            'why_matters': 'Fed가 통화정책 결정 시 가장 중요하게 보는 지표 중 하나입니다.',
+        },
+        'PCE': {
+            'label': 'PCE 물가지수',
+            'unit': '%',
+            'what_is': '개인소비지출(PCE) 기반 물가 지수로, 소비 패턴 변화를 반영합니다.',
+            'why_matters': 'Fed가 인플레이션 목표(2%)를 정할 때 공식적으로 사용하는 지표입니다.',
+        },
+        'Core_PCE': {
+            'label': '근원 PCE 물가지수',
+            'unit': '%',
+            'what_is': '식품·에너지를 제외한 PCE 물가입니다. Fed의 공식 인플레이션 목표 지표입니다.',
+            'why_matters': '이 수치가 2%에 가까울수록 금리 인하 가능성이 높아져 주식에 긍정적입니다.',
+        },
+        'NFP': {
+            'label': '비농업 고용 (NFP)',
+            'unit': 'K',
+            'what_is': '농업을 제외한 미국의 월간 신규 일자리 수입니다.',
+            'why_matters': '고용이 강하면 경제가 좋다는 뜻이지만, 너무 강하면 Fed가 금리를 올려 주식에 부정적일 수 있습니다.',
+        },
+        'Unemployment': {
+            'label': '실업률',
+            'unit': '%',
+            'what_is': '일할 의사가 있는 사람 중 일자리를 찾지 못한 비율입니다.',
+            'why_matters': '실업률이 낮으면 경제가 건강하다는 신호이지만, 너무 낮으면 임금 상승 → 인플레이션 우려가 생깁니다.',
+        },
+        'Industrial_Production': {
+            'label': '산업생산지수',
+            'unit': 'index',
+            'what_is': '공장, 광업, 전기·가스 분야의 생산량을 측정한 지수입니다.',
+            'why_matters': '제조업 경기를 직접 보여주는 지표로, 하락하면 경기 둔화 신호입니다.',
+        },
+        'Consumer_Sentiment': {
+            'label': '소비자심리지수',
+            'unit': 'index',
+            'what_is': '미시간대학이 소비자 설문으로 측정하는 경기 체감 지수입니다.',
+            'why_matters': '소비자가 경제를 비관적으로 보면 소비가 줄어 기업 실적과 주가에 부정적입니다.',
+        },
+        'GDP': {
+            'label': 'GDP (국내총생산)',
+            'unit': '%',
+            'what_is': '미국 경제가 생산한 모든 재화와 서비스의 총 가치입니다. 분기별로 발표됩니다.',
+            'why_matters': 'GDP 성장률이 높으면 경제가 잘 돌아가는 것이고, 마이너스면 경기 침체 우려가 커집니다.',
+        },
+        'Real_GDP': {
+            'label': '실질 GDP',
+            'unit': '%',
+            'what_is': '물가 변동을 제거한 실질적인 경제 성장을 보여주는 GDP입니다.',
+            'why_matters': '인플레이션을 빼고 순수한 경제 성장만 보여줘서 경제 건강 상태의 핵심 지표입니다.',
+        },
+    }
+
+    @staticmethod
+    def get_economic_detail(db: Session, indicator_name: str):
+        """경제 지표 상세 정보 + 시계열"""
+        from app.schemas.market import EconomicDetailResponse, EconomicHistoryPoint
+        from sqlalchemy import text as sql_text
+
+        explainer = MarketService.ECON_EXPLAINER.get(indicator_name)
+        if not explainer:
+            return None
+
+        # 시계열 데이터 (최근 3년)
+        rows = db.execute(sql_text("""
+            SELECT release_date, actual_value, yoy_change
+            FROM economic_indicators
+            WHERE indicator_name = :name
+            ORDER BY release_date
+        """), {"name": indicator_name}).fetchall()
+
+        if not rows:
+            return None
+
+        history = [
+            EconomicHistoryPoint(
+                date=str(r[0]),
+                value=float(r[1]) if r[1] else None,
+                yoy_change=float(r[2]) if r[2] else None,
+            )
+            for r in rows
+        ]
+
+        # 최신값
+        latest = rows[-1]
+        current_value = float(latest[1]) if latest[1] else None
+        current_yoy = float(latest[2]) if latest[2] else None
+
+        # 상태 판단 + 현재 의미 해설
+        if indicator_name in ('CPI', 'Core_CPI', 'PCE', 'Core_PCE'):
+            if current_yoy is not None:
+                if current_yoy > 3.5:
+                    status, status_text = "bad", "높음"
+                    meaning = f"전년 대비 {current_yoy:.1f}% 상승으로 인플레이션이 높은 수준입니다. Fed의 금리 인상 가능성이 있어 기술주에 부정적입니다."
+                elif current_yoy > 2.5:
+                    status, status_text = "neutral", "보통"
+                    meaning = f"전년 대비 {current_yoy:.1f}% 상승으로 물가가 다소 높지만 관리 가능한 수준입니다."
+                else:
+                    status, status_text = "good", "안정"
+                    meaning = f"전년 대비 {current_yoy:.1f}% 상승으로 물가가 안정적입니다. 금리 인하 기대감이 커져 주식에 긍정적입니다."
+            else:
+                status, status_text, meaning = "neutral", "데이터 없음", "최신 데이터가 없습니다."
+
+        elif indicator_name == 'Unemployment':
+            if current_value is not None:
+                if current_value < 4.0:
+                    status, status_text = "good", "양호"
+                    meaning = f"실업률 {current_value:.1f}%로 고용시장이 매우 건강합니다."
+                elif current_value < 5.0:
+                    status, status_text = "neutral", "보통"
+                    meaning = f"실업률 {current_value:.1f}%로 고용시장이 무난한 수준입니다."
+                else:
+                    status, status_text = "bad", "악화"
+                    meaning = f"실업률 {current_value:.1f}%로 고용시장이 약화되고 있습니다. 경기 둔화 우려가 있습니다."
+            else:
+                status, status_text, meaning = "neutral", "데이터 없음", ""
+
+        elif indicator_name == 'NFP':
+            mom = float(rows[-1][2]) if len(rows) > 0 and rows[-1][2] else None
+            if mom is not None:
+                # mom_change는 economic_indicators에서 가져와야 하지만, yoy_change 자리에 있을 수 있음
+                pass
+            status, status_text = "neutral", "참고"
+            meaning = "고용 증가가 지속되면 경제가 건강하다는 신호입니다."
+            if current_value:
+                meaning = f"현재 비농업 고용자 수 {current_value/1000:.0f}K입니다. " + meaning
+
+        elif indicator_name in ('GDP', 'Real_GDP'):
+            if current_yoy is not None:
+                if current_yoy > 2:
+                    status, status_text = "good", "양호"
+                    meaning = f"경제 성장률 {current_yoy:.1f}%로 건강한 성장세를 보이고 있습니다."
+                elif current_yoy > 0:
+                    status, status_text = "neutral", "둔화"
+                    meaning = f"경제 성장률 {current_yoy:.1f}%로 성장세가 다소 둔화되었습니다."
+                else:
+                    status, status_text = "bad", "위축"
+                    meaning = f"경제 성장률 {current_yoy:.1f}%로 경기 침체 우려가 있습니다."
+            else:
+                status, status_text, meaning = "neutral", "데이터 없음", ""
+
+        else:
+            status, status_text = "neutral", "참고"
+            meaning = "해당 지표를 확인하세요."
+
+        # 표시 값 결정
+        display_value = current_yoy if indicator_name in ('CPI', 'Core_CPI', 'PCE', 'Core_PCE', 'GDP', 'Real_GDP') else current_value
+
+        return EconomicDetailResponse(
+            name=indicator_name,
+            label=explainer['label'],
+            current_value=display_value,
+            current_yoy=current_yoy,
+            unit=explainer['unit'],
+            status=status,
+            status_text=status_text,
+            what_is=explainer['what_is'],
+            why_matters=explainer['why_matters'],
+            current_meaning=meaning,
+            history=history,
+        )
