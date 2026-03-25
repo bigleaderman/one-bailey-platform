@@ -144,6 +144,21 @@ class NewsResponse(BaseModel):
     items: List[NewsItem]
 
 
+class EventItem(BaseModel):
+    """경제 이벤트"""
+    date: str
+    name: str
+    label: str
+    importance: str
+    is_today: bool = False
+
+
+class EventsResponse(BaseModel):
+    """경제 이벤트 응답"""
+    today: List[EventItem]
+    upcoming: List[EventItem]
+
+
 class EconomicHistoryPoint(BaseModel):
     """경제 지표 시계열 포인트"""
     date: str

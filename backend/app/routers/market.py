@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse, MarketTrendResponse, MarketSummaryResponse, MarketIndicatorDetailResponse, EconomicDetailResponse, NewsResponse, NewsItem
+from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse, MarketTrendResponse, MarketSummaryResponse, MarketIndicatorDetailResponse, EconomicDetailResponse, NewsResponse, NewsItem, EventsResponse, EventItem
 from sqlalchemy import text as sql_text
 from app.services.market_service import MarketService
 
@@ -65,6 +65,38 @@ def get_economic_detail(indicator_name: str, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="해당 경제 지표를 찾을 수 없습니다")
     return result
+
+
+@router.get("/events", response_model=EventsResponse)
+def get_economic_events(db: Session = Depends(get_db)):
+    """경제 캘린더 (오늘 + 향후 7일)"""
+    from datetime import date as dt_date, timedelta
+    today = dt_date.today()
+    end = today + timedelta(days=7)
+
+    rows = db.execute(sql_text("""
+        SELECT event_date, event_name, event_label, importance
+        FROM economic_events
+        WHERE event_date >= :today AND event_date <= :end
+        ORDER BY event_date, importance DESC
+    """), {"today": today, "end": end}).fetchall()
+
+    today_events = []
+    upcoming = []
+    for r in rows:
+        item = EventItem(
+            date=str(r[0]),
+            name=r[1],
+            label=r[2],
+            importance=r[3],
+            is_today=(r[0] == today),
+        )
+        if r[0] == today:
+            today_events.append(item)
+        else:
+            upcoming.append(item)
+
+    return EventsResponse(today=today_events, upcoming=upcoming)
 
 
 @router.get("/news", response_model=NewsResponse)

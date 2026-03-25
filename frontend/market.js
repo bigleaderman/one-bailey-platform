@@ -5,6 +5,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     loadSummary();
     loadTrend();
+    loadEvents();
     loadNews();
 });
 
@@ -469,6 +470,53 @@ function renderEconDetailChart(data) {
             }
         }
     });
+}
+
+// ============================================
+// 경제 캘린더
+// ============================================
+async function loadEvents() {
+    try {
+        const res = await fetch('/api/market/events');
+        if (!res.ok) return;
+        const data = await res.json();
+        renderEvents(data);
+    } catch (e) {
+        console.error('Events error:', e);
+    }
+}
+
+function renderEvents(data) {
+    const container = document.getElementById('calendarList');
+
+    if ((!data.today || data.today.length === 0) && (!data.upcoming || data.upcoming.length === 0)) {
+        container.innerHTML = '<p class="no-data">예정된 경제 이벤트가 없습니다.</p>';
+        return;
+    }
+
+    const importanceIcons = { 'HIGH': '🔴', 'MEDIUM': '🟡', 'LOW': '⚪' };
+    let html = '';
+
+    if (data.today && data.today.length > 0) {
+        html += '<div class="cal-group"><div class="cal-group-title">오늘</div>';
+        data.today.forEach(evt => {
+            const icon = importanceIcons[evt.importance] || '⚪';
+            html += `<div class="cal-item today"><span class="cal-icon">${icon}</span><span class="cal-label">${evt.label}</span></div>`;
+        });
+        html += '</div>';
+    }
+
+    if (data.upcoming && data.upcoming.length > 0) {
+        html += '<div class="cal-group"><div class="cal-group-title">이번 주</div>';
+        data.upcoming.forEach(evt => {
+            const icon = importanceIcons[evt.importance] || '⚪';
+            const dateStr = evt.date.slice(5); // MM-DD
+            html += `<div class="cal-item"><span class="cal-icon">${icon}</span><span class="cal-date">${dateStr}</span><span class="cal-label">${evt.label}</span></div>`;
+        });
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
 }
 
 // ============================================
