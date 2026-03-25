@@ -100,14 +100,23 @@ def get_economic_events(db: Session = Depends(get_db)):
 
 
 @router.get("/news", response_model=NewsResponse)
-def get_latest_news(db: Session = Depends(get_db)):
-    """최신 시장 뉴스 헤드라인"""
-    rows = db.execute(sql_text("""
-        SELECT headline, source, news_datetime, symbol, data_date, headline_ko, summary_ko
-        FROM market_news
-        ORDER BY data_date DESC, news_datetime DESC NULLS LAST
-        LIMIT 10
-    """)).fetchall()
+def get_latest_news(date: str = None, db: Session = Depends(get_db)):
+    """시장 뉴스 헤드라인 (날짜 지정 가능)"""
+    if date:
+        rows = db.execute(sql_text("""
+            SELECT headline, source, news_datetime, symbol, data_date, headline_ko, summary_ko
+            FROM market_news
+            WHERE data_date = :d
+            ORDER BY news_datetime DESC NULLS LAST
+            LIMIT 10
+        """), {"d": date}).fetchall()
+    else:
+        rows = db.execute(sql_text("""
+            SELECT headline, source, news_datetime, symbol, data_date, headline_ko, summary_ko
+            FROM market_news
+            ORDER BY data_date DESC, news_datetime DESC NULLS LAST
+            LIMIT 10
+        """)).fetchall()
 
     if not rows:
         return NewsResponse(date="", items=[])

@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     loadDetail(dateParam);
     loadMarket(dateParam);
+    loadDateNews(dateParam);
 });
 
 // ============================================
@@ -139,6 +140,38 @@ function setIndicator(id, value, suffix, decimals, colorize, prefix) {
         el.classList.remove('positive', 'negative');
         if (value > 0) el.classList.add('positive');
         else if (value < 0) el.classList.add('negative');
+    }
+}
+
+// ============================================
+// 당일 뉴스
+// ============================================
+async function loadDateNews(dateStr) {
+    try {
+        const res = await fetch(`/api/market/news?date=${dateStr}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // 해당 날짜 뉴스만 필터 (또는 최신 뉴스 표시)
+        if (!data.items || data.items.length === 0) return;
+
+        const section = document.getElementById('newsSection');
+        section.style.display = 'block';
+
+        const container = document.getElementById('detailNewsList');
+        container.innerHTML = data.items.map(item => {
+            const headline = item.headline_ko || item.headline;
+            const summary = item.summary_ko ? `<p class="detail-news-summary">${item.summary_ko}</p>` : '';
+            return `
+                <div class="detail-news-item">
+                    <p class="detail-news-headline">${headline}</p>
+                    ${summary}
+                    <span class="detail-news-source">${item.source}</span>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('News error:', e);
     }
 }
 
