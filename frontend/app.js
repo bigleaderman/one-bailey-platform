@@ -4,6 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     loadPrediction();
+    loadMiniTemperature();
     loadPerformance();
     loadMonthlyTrend();
 });
@@ -156,6 +157,27 @@ function toggleDetails() {
 document.getElementById('notificationBtn').addEventListener('click', function() {
     alert('알림 기능은 준비 중입니다.');
 });
+
+/**
+ * 시장 온도계 (미니)
+ */
+async function loadMiniTemperature() {
+    try {
+        const res = await fetch('/api/market/summary');
+        if (!res.ok) return;
+        const data = await res.json();
+        const temp = data.temperature;
+
+        document.getElementById('miniTempEmoji').textContent = temp.emoji;
+        document.getElementById('miniTempLabel').textContent = `시장 ${temp.label}`;
+        document.getElementById('miniTempDesc').textContent = temp.description;
+
+        const fill = document.getElementById('miniTempFill');
+        fill.style.left = `calc(${temp.score}% - 7px)`;
+    } catch (e) {
+        console.error('Mini temp error:', e);
+    }
+}
 
 /**
  * 예측 성과 로드

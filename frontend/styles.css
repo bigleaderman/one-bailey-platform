@@ -383,6 +383,69 @@ body {
     font-weight: 600;
 }
 
+/* Mini Temperature */
+.mini-temp {
+    background: white;
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mini-temp:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.mini-temp-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mini-temp-emoji {
+    font-size: 1.8rem;
+}
+
+.mini-temp-label {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.mini-temp-desc {
+    display: block;
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.mini-temp-bar {
+    width: 60px;
+    height: 8px;
+    background: linear-gradient(to right, #ef4444, #f59e0b, #22c55e);
+    border-radius: 4px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.mini-temp-fill {
+    position: absolute;
+    top: -3px;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border: 2px solid #374151;
+    border-radius: 50%;
+    transition: left 0.8s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
 /* Performance Card */
 .performance-card {
     background: white;
