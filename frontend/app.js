@@ -4,7 +4,8 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     loadPrediction();
-    loadMonthlyTrend();  // 추가
+    loadPerformance();
+    loadMonthlyTrend();
 });
 
 // 요소 참조
@@ -155,6 +156,41 @@ function toggleDetails() {
 document.getElementById('notificationBtn').addEventListener('click', function() {
     alert('알림 기능은 준비 중입니다.');
 });
+
+/**
+ * 예측 성과 로드
+ */
+async function loadPerformance() {
+    try {
+        const res = await fetch('/api/predictions/history?days=7');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // 7일 적중률
+        const stats = data.stats;
+        document.getElementById('perf7d').textContent =
+            stats.total > 0 ? `${stats.accuracy}%` : '-';
+        document.getElementById('perf30d').textContent =
+            stats.total_30d > 0 ? `${stats.accuracy_30d}%` : '-';
+
+        // 최근 기록 미니 그리드
+        const grid = document.getElementById('perfRecent');
+        const items = [...data.history].reverse(); // 날짜순
+        grid.innerHTML = items.map(item => {
+            const icon = item.is_correct === true ? '✅' : item.is_correct === false ? '❌' : '⏳';
+            const dir = item.direction === 'UP' ? '↑' : '↓';
+            return `
+                <div class="perf-item" onclick="window.location.href='/detail.html?date=${item.date}'">
+                    <div class="perf-date">${item.date_short}</div>
+                    <div class="perf-icon">${icon}</div>
+                    <div class="perf-dir">${dir}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('Performance error:', e);
+    }
+}
 
 /**
  * 월간 시장 흐름 로드
