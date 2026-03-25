@@ -24,4 +24,5 @@ class Prediction(Base):
     risk_factors = Column(JSON, nullable=True)
     summary = Column(Text, nullable=True)
     llm_response = Column(JSON, nullable=True)
+    review = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())

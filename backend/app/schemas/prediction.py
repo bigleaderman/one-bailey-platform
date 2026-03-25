@@ -50,6 +50,7 @@ class PredictionDetailResponse(BaseModel):
     actual_direction: Optional[str] = None
     actual_change: Optional[float] = None
     is_correct: Optional[bool] = None
+    review: Optional[str] = None
 
 
 class PredictionHistoryItem(BaseModel):

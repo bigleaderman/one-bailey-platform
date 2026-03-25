@@ -121,6 +121,7 @@ class PredictionService:
             actual_direction=prediction.actual_direction,
             actual_change=float(prediction.actual_change) if prediction.actual_change is not None else None,
             is_correct=is_correct,
+            review=prediction.review,
         )
 
     @staticmethod

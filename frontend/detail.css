@@ -88,6 +88,19 @@
     color: #374151;
 }
 
+/* Review Card */
+.review-card {
+    background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+    border: 2px solid #bfdbfe;
+}
+
+.review-text {
+    font-size: 0.93rem;
+    color: #1e3a5f;
+    line-height: 1.7;
+    margin: 0;
+}
+
 .summary-confidence {
     font-size: 0.9rem;
     color: #6b7280;

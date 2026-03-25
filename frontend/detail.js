@@ -76,6 +76,13 @@ function renderDetail(data) {
         }
     }
 
+    // 복기 분석
+    if (data.review) {
+        const reviewEl = document.getElementById('reviewSection');
+        reviewEl.style.display = 'block';
+        document.getElementById('reviewText').textContent = data.review;
+    }
+
     // 상승 요인
     const keyFactors = data.key_factors || [];
     document.getElementById('keyCount').textContent = `(${keyFactors.length})`;
