@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse, MarketTrendResponse, MarketSummaryResponse, MarketIndicatorDetailResponse, EconomicDetailResponse
+from app.schemas.market import MonthlyTrendResponse, MarketIndicatorsResponse, DateMarketResponse, MarketTrendResponse, MarketSummaryResponse, MarketIndicatorDetailResponse, EconomicDetailResponse, NewsResponse, NewsItem
+from sqlalchemy import text as sql_text
 from app.services.market_service import MarketService
 
 
@@ -64,6 +65,33 @@ def get_economic_detail(indicator_name: str, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="해당 경제 지표를 찾을 수 없습니다")
     return result
+
+
+@router.get("/news", response_model=NewsResponse)
+def get_latest_news(db: Session = Depends(get_db)):
+    """최신 시장 뉴스 헤드라인"""
+    rows = db.execute(sql_text("""
+        SELECT headline, source, news_datetime, symbol, data_date
+        FROM market_news
+        ORDER BY data_date DESC, news_datetime DESC NULLS LAST
+        LIMIT 10
+    """)).fetchall()
+
+    if not rows:
+        return NewsResponse(date="", items=[])
+
+    data_date = str(rows[0][4]) if rows[0][4] else ""
+    items = [
+        NewsItem(
+            headline=r[0],
+            source=r[1] or "",
+            datetime=r[2].strftime("%H:%M") if r[2] else None,
+            symbol=r[3] or "",
+        )
+        for r in rows
+    ]
+
+    return NewsResponse(date=data_date, items=items)
 
 
 @router.get("/date/{target_date}", response_model=DateMarketResponse)

@@ -5,6 +5,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     loadSummary();
     loadTrend();
+    loadNews();
 });
 
 // ============================================
@@ -468,6 +469,49 @@ function renderEconDetailChart(data) {
             }
         }
     });
+}
+
+// ============================================
+// 시장 뉴스
+// ============================================
+async function loadNews() {
+    try {
+        const res = await fetch('/api/market/news');
+        if (!res.ok) return;
+        const data = await res.json();
+        renderNews(data);
+    } catch (e) {
+        console.error('News error:', e);
+    }
+}
+
+function renderNews(data) {
+    const container = document.getElementById('newsList');
+
+    if (!data.items || data.items.length === 0) {
+        container.innerHTML = '<p class="no-data">최신 뉴스가 없습니다.</p>';
+        return;
+    }
+
+    // 심볼별 아이콘
+    const symbolIcons = {
+        'AAPL': '🍎', 'MSFT': '🪟', 'GOOGL': '🔍', 'NVDA': '🟢',
+        'META': '📘', 'AMZN': '📦', 'TSLA': '🚗', 'MARKET': '📰'
+    };
+
+    container.innerHTML = data.items.map(item => {
+        const icon = symbolIcons[item.symbol] || '📰';
+        const timeStr = item.datetime ? `<span class="news-time">${item.datetime}</span>` : '';
+        return `
+            <div class="news-item">
+                <span class="news-icon">${icon}</span>
+                <div class="news-content">
+                    <p class="news-headline">${item.headline}</p>
+                    <span class="news-source">${item.source} ${timeStr}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderVIXChart(data) {

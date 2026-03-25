@@ -128,6 +128,20 @@ class MarketIndicatorDetailResponse(BaseModel):
     history: List[TrendDataPoint]
 
 
+class NewsItem(BaseModel):
+    """뉴스 헤드라인"""
+    headline: str
+    source: str
+    datetime: Optional[str] = None
+    symbol: Optional[str] = None
+
+
+class NewsResponse(BaseModel):
+    """뉴스 응답"""
+    date: str
+    items: List[NewsItem]
+
+
 class EconomicHistoryPoint(BaseModel):
     """경제 지표 시계열 포인트"""
     date: str
