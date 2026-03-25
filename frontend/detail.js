@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     loadDetail(dateParam);
     loadMarket(dateParam);
-    loadRecent();
 });
 
 // ============================================
@@ -140,53 +139,6 @@ function setIndicator(id, value, suffix, decimals, colorize, prefix) {
         el.classList.remove('positive', 'negative');
         if (value > 0) el.classList.add('positive');
         else if (value < 0) el.classList.add('negative');
-    }
-}
-
-// ============================================
-// 최근 예측 기록 로드
-// ============================================
-async function loadRecent() {
-    try {
-        const res = await fetch('/api/predictions/history?days=7');
-        if (!res.ok) return;
-        const data = await res.json();
-        renderRecent(data.history, data.stats);
-    } catch (e) {
-        console.error('Recent data error:', e);
-    }
-}
-
-function renderRecent(items, stats) {
-    const grid = document.getElementById('recentGrid');
-
-    if (!items || items.length === 0) {
-        grid.innerHTML = '<p>기록이 없습니다.</p>';
-        return;
-    }
-
-    // 최신순 → 날짜순으로 뒤집기
-    const sorted = [...items].reverse();
-
-    grid.innerHTML = sorted.map(item => {
-        const icon = item.is_correct === true ? '✅' : item.is_correct === false ? '❌' : '⏳';
-        const dirText = item.direction === 'UP' ? '상승' : item.direction === 'DOWN' ? '하락' : '보합';
-        const clickable = item.date ? `onclick="window.location.href='/detail.html?date=${item.date}'"` : '';
-        return `
-            <div class="recent-item" ${clickable}>
-                <div class="recent-date">${item.date_short}</div>
-                <div class="recent-icon">${icon}</div>
-                <div class="recent-dir">${dirText}</div>
-            </div>
-        `;
-    }).join('');
-
-    // 통계
-    const statsEl = document.getElementById('recentStats');
-    if (stats && stats.total > 0) {
-        statsEl.textContent = `최근 ${stats.total}일 적중률: ${stats.accuracy}% (${stats.correct}/${stats.total})`;
-    } else {
-        statsEl.textContent = '아직 검증된 기록이 없습니다.';
     }
 }
 
