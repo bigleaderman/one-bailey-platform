@@ -502,11 +502,14 @@ function renderNews(data) {
     container.innerHTML = data.items.map(item => {
         const icon = symbolIcons[item.symbol] || '📰';
         const timeStr = item.datetime ? `<span class="news-time">${item.datetime}</span>` : '';
+        const headline = item.headline_ko || item.headline;
+        const summary = item.summary_ko ? `<p class="news-summary">${item.summary_ko}</p>` : '';
         return `
             <div class="news-item">
                 <span class="news-icon">${icon}</span>
                 <div class="news-content">
-                    <p class="news-headline">${item.headline}</p>
+                    <p class="news-headline">${headline}</p>
+                    ${summary}
                     <span class="news-source">${item.source} ${timeStr}</span>
                 </div>
             </div>

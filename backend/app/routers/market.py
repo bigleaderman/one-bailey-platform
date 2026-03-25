@@ -71,7 +71,7 @@ def get_economic_detail(indicator_name: str, db: Session = Depends(get_db)):
 def get_latest_news(db: Session = Depends(get_db)):
     """최신 시장 뉴스 헤드라인"""
     rows = db.execute(sql_text("""
-        SELECT headline, source, news_datetime, symbol, data_date
+        SELECT headline, source, news_datetime, symbol, data_date, headline_ko, summary_ko
         FROM market_news
         ORDER BY data_date DESC, news_datetime DESC NULLS LAST
         LIMIT 10
@@ -87,6 +87,8 @@ def get_latest_news(db: Session = Depends(get_db)):
             source=r[1] or "",
             datetime=r[2].strftime("%H:%M") if r[2] else None,
             symbol=r[3] or "",
+            headline_ko=r[5],
+            summary_ko=r[6],
         )
         for r in rows
     ]

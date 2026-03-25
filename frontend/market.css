@@ -312,6 +312,15 @@
     margin: 0 0 4px 0;
 }
 
+.news-summary {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 2px 0 4px 0;
+    line-height: 1.4;
+    padding-left: 8px;
+    border-left: 2px solid #e5e7eb;
+}
+
 .news-source {
     font-size: 0.75rem;
     color: #9ca3af;

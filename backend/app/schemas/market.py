@@ -131,6 +131,8 @@ class MarketIndicatorDetailResponse(BaseModel):
 class NewsItem(BaseModel):
     """뉴스 헤드라인"""
     headline: str
+    headline_ko: Optional[str] = None
+    summary_ko: Optional[str] = None
     source: str
     datetime: Optional[str] = None
     symbol: Optional[str] = None
