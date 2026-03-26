@@ -80,7 +80,7 @@ function renderDetail(data) {
     if (data.review) {
         const reviewEl = document.getElementById('reviewSection');
         reviewEl.style.display = 'block';
-        document.getElementById('reviewText').textContent = data.review;
+        document.getElementById('reviewText').innerHTML = formatReview(data.review, data.is_correct);
     }
 
     // 상승 요인
@@ -173,6 +173,62 @@ async function loadDateNews(dateStr) {
     } catch (e) {
         console.error('News error:', e);
     }
+}
+
+// ============================================
+// 복기 포맷팅
+// ============================================
+function formatReview(text, isCorrect) {
+    const icon = isCorrect ? '✅' : '❌';
+    const labels = isCorrect
+        ? ['적중 핵심 이유', '예측대로 작용한 요인', '참고할 교훈']
+        : ['미적중 핵심 이유', '과소/과대평가한 요인', '참고할 교훈'];
+
+    // 1. 2. 3. 패턴 파싱 시도
+    const numbered = text.match(/\d+\.\s+[^\n]+/g);
+
+    if (numbered && numbered.length >= 2) {
+        let html = '<div class="review-items">';
+        numbered.forEach((item, i) => {
+            const content = item.replace(/^\d+\.\s*/, '');
+            const label = labels[i] || '';
+            const itemIcon = i === 0 ? '🔍' : i === 1 ? '📊' : '💡';
+            html += `
+                <div class="review-item">
+                    <div class="review-item-header">
+                        <span class="review-item-icon">${itemIcon}</span>
+                        <span class="review-item-label">${label}</span>
+                    </div>
+                    <p class="review-item-text">${content}</p>
+                </div>
+            `;
+        });
+        html += '</div>';
+        return html;
+    }
+
+    // 번호 패턴 없으면 문장 단위로 분리
+    const sentences = text.split(/(?<=\.\s)/).filter(s => s.trim());
+    if (sentences.length >= 2) {
+        let html = '<div class="review-items">';
+        sentences.forEach((s, i) => {
+            const itemIcon = i === 0 ? '🔍' : i === 1 ? '📊' : '💡';
+            const label = labels[Math.min(i, labels.length - 1)] || '';
+            html += `
+                <div class="review-item">
+                    <div class="review-item-header">
+                        <span class="review-item-icon">${itemIcon}</span>
+                        <span class="review-item-label">${label}</span>
+                    </div>
+                    <p class="review-item-text">${s.trim()}</p>
+                </div>
+            `;
+        });
+        html += '</div>';
+        return html;
+    }
+
+    return `<p class="review-plain">${text}</p>`;
 }
 
 // ============================================
