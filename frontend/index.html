@@ -10,7 +10,20 @@
     <div id="app">
         <!-- Header -->
         <header class="header">
-            <h1 class="logo">OneBailey</h1>
+            <div class="logo">
+                <svg class="logo-icon" width="28" height="28" viewBox="0 0 32 32">
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3b82f6"/>
+                            <stop offset="100%" style="stop-color:#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="16" cy="16" r="15" fill="url(#logoGrad)"/>
+                    <path d="M8 20 L13 13 L18 16 L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <circle cx="24" cy="10" r="2" fill="white"/>
+                </svg>
+                <span class="logo-text">One<span class="logo-accent">Bailey</span></span>
+            </div>
             <button class="notification-btn" id="notificationBtn">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
