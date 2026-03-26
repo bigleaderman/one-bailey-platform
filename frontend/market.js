@@ -420,9 +420,20 @@ function renderEconDetailChart(data) {
     const ctx = document.getElementById('econDetailChart').getContext('2d');
     const history = data.history;
 
-    const labels = history.map(h => h.date.slice(0, 7)); // YYYY-MM
     const isYoyType = ['CPI', 'Core_CPI', 'PCE', 'Core_PCE', 'GDP', 'Real_GDP'].includes(data.name);
-    const values = history.map(h => isYoyType ? h.yoy_change : h.value);
+    const isPercent = ['Unemployment'].includes(data.name);
+
+    // null 필터링 + 소수점 정리
+    const filtered = history.filter(h => {
+        const v = isYoyType ? h.yoy_change : h.value;
+        return v !== null && v !== undefined;
+    });
+
+    const labels = filtered.map(h => h.date.slice(0, 7));
+    const values = filtered.map(h => {
+        const v = isYoyType ? h.yoy_change : h.value;
+        return v !== null ? parseFloat(Number(v).toFixed(2)) : null;
+    });
     const label = isYoyType ? 'YoY 변화율 (%)' : data.label;
 
     econDetailChart = new Chart(ctx, {
@@ -439,6 +450,7 @@ function renderEconDetailChart(data) {
                 pointRadius: 3,
                 pointHoverRadius: 6,
                 borderWidth: 2,
+                spanGaps: true,
             }]
         },
         options: {
@@ -450,7 +462,9 @@ function renderEconDetailChart(data) {
                     callbacks: {
                         label: function(ctx) {
                             const v = ctx.parsed.y;
-                            return isYoyType ? `${v.toFixed(1)}%` : v.toFixed(1);
+                            if (isYoyType) return v.toFixed(1) + '%';
+                            if (isPercent) return v.toFixed(1) + '%';
+                            return v.toFixed(1);
                         }
                     }
                 }
@@ -464,7 +478,10 @@ function renderEconDetailChart(data) {
                     grid: { color: 'rgba(0,0,0,0.05)' },
                     ticks: {
                         font: { size: 10 },
-                        callback: function(v) { return isYoyType ? v + '%' : v; }
+                        callback: function(v) {
+                            if (isYoyType || isPercent) return Number(v).toFixed(1) + '%';
+                            return Number(v).toFixed(1);
+                        }
                     }
                 }
             }
