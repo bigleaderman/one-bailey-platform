@@ -64,15 +64,33 @@ function updateUI(data) {
     }
     
     // Hero 텍스트
-    if (isUp) {
-        heroTitle.textContent = '오늘 미국 증시는 상승할 것으로 예상돼요 📈';
-    } else if (isDown) {
-        heroTitle.textContent = '오늘 미국 증시는 하락할 것으로 예상돼요 📉';
+    if (!data.is_today) {
+        // 어제 예측 (오늘 예측 아직 미생성)
+        const dirText = isUp ? '상승' : '하락';
+        if (data.is_correct === true) {
+            heroTitle.textContent = `어제 예측 ${dirText} — 적중! ✅`;
+        } else if (data.is_correct === false) {
+            heroTitle.textContent = `어제 예측 ${dirText} — 미적중 ❌`;
+        } else {
+            heroTitle.textContent = `어제 예측: ${dirText} (검증 대기 중)`;
+        }
+        heroSubtitle.textContent = '오늘 예측은 22:00에 업데이트됩니다.';
+
+        // 실제 변동률 표시
+        if (data.actual_change !== null && data.actual_change !== undefined) {
+            const sign = data.actual_change >= 0 ? '+' : '';
+            heroSubtitle.textContent = `실제 ${sign}${data.actual_change.toFixed(2)}% | 오늘 예측은 22:00에 업데이트됩니다.`;
+        }
     } else {
-        heroTitle.textContent = '오늘 미국 증시는 보합세가 예상돼요 📊';
+        if (isUp) {
+            heroTitle.textContent = '오늘 미국 증시는 상승할 것으로 예상돼요 📈';
+        } else if (isDown) {
+            heroTitle.textContent = '오늘 미국 증시는 하락할 것으로 예상돼요 📉';
+        } else {
+            heroTitle.textContent = '오늘 미국 증시는 보합세가 예상돼요 📊';
+        }
+        heroSubtitle.textContent = data.summary || '예측 요약 정보가 없습니다.';
     }
-    
-    heroSubtitle.textContent = data.summary || '예측 요약 정보가 없습니다.';
     
     // 방향 텍스트 및 아이콘
     directionText.textContent = data.direction_text;

@@ -18,6 +18,10 @@ class TodayPredictionResponse(BaseModel):
     summary: str
     key_factors: List[str]
     risk_factors: List[str]
+    is_today: bool = True
+    actual_direction: Optional[str] = None
+    actual_change: Optional[float] = None
+    is_correct: Optional[bool] = None
 
 
 class PredictionResponse(BaseModel):

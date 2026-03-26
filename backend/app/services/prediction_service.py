@@ -58,6 +58,11 @@ class PredictionService:
         key_factors = prediction.key_factors if isinstance(prediction.key_factors, list) else []
         risk_factors = prediction.risk_factors if isinstance(prediction.risk_factors, list) else []
         
+        is_today = prediction.prediction_date == today
+        is_correct = None
+        if prediction.actual_direction:
+            is_correct = prediction.direction == prediction.actual_direction
+
         return TodayPredictionResponse(
             date=prediction.prediction_date.strftime("%Y년 %m월 %d일"),
             date_iso=prediction.prediction_date.isoformat(),
@@ -68,7 +73,11 @@ class PredictionService:
             confidence_stars=confidence_stars,
             summary=prediction.summary or "예측 요약이 없습니다.",
             key_factors=key_factors,
-            risk_factors=risk_factors
+            risk_factors=risk_factors,
+            is_today=is_today,
+            actual_direction=prediction.actual_direction,
+            actual_change=float(prediction.actual_change) if prediction.actual_change is not None else None,
+            is_correct=is_correct,
         )
     
     @staticmethod
