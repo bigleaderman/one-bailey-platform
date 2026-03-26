@@ -183,18 +183,22 @@ function closeIndicatorModal() {
 function renderIndicatorDetailChart(data, field) {
     const ctx = document.getElementById('indDetailChart').getContext('2d');
     const history = data.history;
-    const labels = history.map(h => h.date ? h.date.slice(5) : '');
 
-    // 필드에서 값 추출
-    let values;
-    if (field) {
-        values = history.map(h => h[field]);
-    } else {
-        // hy_spread, real_rate는 history에 직접 없으므로 current_value만 표시
-        // history의 모든 TrendDataPoint에는 해당 필드가 없으니 빈 차트
-        values = history.map(() => null);
+    if (!field) {
+        ctx.canvas.parentElement.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px">데이터가 축적되면 차트가 표시됩니다.</p>';
+        return;
     }
 
+    // null 필터링
+    const filtered = history.filter(h => h[field] !== null && h[field] !== undefined);
+
+    if (filtered.length < 2) {
+        ctx.canvas.parentElement.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px">데이터가 축적되면 차트가 표시됩니다. (현재 ' + filtered.length + '일분)</p>';
+        return;
+    }
+
+    const labels = filtered.map(h => h.date ? h.date.slice(5) : '');
+    const values = filtered.map(h => parseFloat(Number(h[field]).toFixed(3)));
     const color = data.name === 'vix' || data.name === 'hy_spread' ? '#ef4444' : '#3b82f6';
 
     indDetailChart = new Chart(ctx, {
@@ -208,8 +212,8 @@ function renderIndicatorDetailChart(data, field) {
                 backgroundColor: color + '1A',
                 fill: true,
                 tension: 0.3,
-                pointRadius: 2,
-                pointHoverRadius: 5,
+                pointRadius: 3,
+                pointHoverRadius: 6,
                 borderWidth: 2,
             }]
         },
@@ -219,7 +223,13 @@ function renderIndicatorDetailChart(data, field) {
             plugins: { legend: { display: false } },
             scales: {
                 x: { grid: { display: false }, ticks: { maxTicksLimit: 6, font: { size: 10 } } },
-                y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 } } }
+                y: {
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: {
+                        font: { size: 10 },
+                        callback: function(v) { return Number(v).toFixed(2); }
+                    }
+                }
             }
         }
     });
