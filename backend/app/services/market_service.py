@@ -952,7 +952,6 @@ class MarketService:
         history = []
         for row in reversed(rows):
             meta = row.collection_meta or {}
-            val = getattr(row, field, None)
             history.append(TrendDataPoint(
                 date=meta.get('data_date', ''),
                 qqq_price=float(row.qqq_price) if row.qqq_price else None,
@@ -961,6 +960,8 @@ class MarketService:
                 dxy_level=float(row.dxy_level) if row.dxy_level else None,
                 gold_price=float(row.gold_price) if row.gold_price else None,
                 wti_oil=float(row.wti_oil) if row.wti_oil else None,
+                hy_spread=float(row.hy_spread) if getattr(row, 'hy_spread', None) else None,
+                real_rate_10y=float(row.real_rate_10y) if getattr(row, 'real_rate_10y', None) else None,
             ))
 
         # 최신값
