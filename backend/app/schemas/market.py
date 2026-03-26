@@ -65,6 +65,8 @@ class TrendDataPoint(BaseModel):
     dxy_level: Optional[float] = None
     gold_price: Optional[float] = None
     wti_oil: Optional[float] = None
+    hy_spread: Optional[float] = None
+    real_rate_10y: Optional[float] = None
 
 
 class MarketTrendResponse(BaseModel):

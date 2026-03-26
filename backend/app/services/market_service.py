@@ -370,6 +370,8 @@ class MarketService:
                 dxy_level=float(row.dxy_level) if row.dxy_level else None,
                 gold_price=float(row.gold_price) if row.gold_price else None,
                 wti_oil=float(row.wti_oil) if row.wti_oil else None,
+                hy_spread=float(row.hy_spread) if getattr(row, 'hy_spread', None) else None,
+                real_rate_10y=float(row.real_rate_10y) if getattr(row, 'real_rate_10y', None) else None,
             ))
 
         return MarketTrendResponse(data=data, days=len(data))

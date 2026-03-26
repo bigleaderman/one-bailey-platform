@@ -132,7 +132,7 @@ function showIndicatorModal(data) {
     // 차트에 사용할 필드 매핑
     const fieldMap = {
         'vix': 'vix_level', 'treasury_10y': 'treasury_10y',
-        'hy_spread': null, 'real_rate': null,
+        'hy_spread': 'hy_spread', 'real_rate': 'real_rate_10y',
         'dxy': 'dxy_level', 'gold': 'gold_price'
     };
 
