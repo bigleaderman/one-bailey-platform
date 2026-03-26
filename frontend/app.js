@@ -65,13 +65,9 @@ function updateUI(data) {
     
     // Hero = 시장 요약 메시지
     if (!data.is_today) {
-        heroTitle.textContent = '오늘의 예측을 준비하고 있어요 ⏳';
-        if (data.actual_change !== null && data.actual_change !== undefined) {
-            const sign = data.actual_change >= 0 ? '+' : '';
-            heroSubtitle.textContent = `오늘 예측은 22:00에 업데이트됩니다.`;
-        } else {
-            heroSubtitle.textContent = '오늘 예측은 22:00에 업데이트됩니다.';
-        }
+        const resultIcon = data.is_correct === true ? '✅ 적중' : data.is_correct === false ? '❌ 미적중' : '⏳ 검증 대기';
+        heroTitle.textContent = `어제 예측 결과  ${resultIcon}`;
+        heroSubtitle.textContent = '오늘 예측은 22:00에 업데이트됩니다.';
     } else {
         if (isUp) {
             heroTitle.textContent = '오늘 미국 증시는 상승할 것으로 예상돼요 📈';
@@ -86,26 +82,31 @@ function updateUI(data) {
     // QQQ 카드
     const badge = document.getElementById('predictionBadge');
     const summaryEl = document.getElementById('predictionSummary');
+    const resultArea = document.getElementById('predictionResult');
 
     if (!data.is_today) {
         badge.textContent = '어제 예측';
         badge.style.background = '#f3f4f6';
         badge.style.color = '#6b7280';
+        directionText.textContent = data.direction_text;
+        summaryEl.textContent = data.summary || '';
 
-        if (data.is_correct === true) {
-            directionText.textContent = data.direction_text + ' → 적중 ✅';
-        } else if (data.is_correct === false) {
+        // 실제 결과 영역
+        if (resultArea && data.actual_direction) {
+            resultArea.style.display = 'block';
             const actualText = data.actual_direction === 'UP' ? '상승' : '하락';
-            directionText.textContent = data.direction_text + ' → 실제 ' + actualText + ' ❌';
-        } else {
-            directionText.textContent = data.direction_text;
-        }
-
-        if (data.actual_change !== null && data.actual_change !== undefined) {
             const sign = data.actual_change >= 0 ? '+' : '';
-            summaryEl.textContent = `실제 변동: ${sign}${data.actual_change.toFixed(2)}%`;
-        } else {
-            summaryEl.textContent = data.summary || '';
+            const changeStr = data.actual_change !== null ? `${sign}${data.actual_change.toFixed(2)}%` : '';
+            const correctIcon = data.is_correct ? '✅' : '❌';
+            const correctText = data.is_correct ? '적중' : '미적중';
+            const correctClass = data.is_correct ? 'correct' : 'wrong';
+            resultArea.innerHTML = `
+                <div class="result-row ${correctClass}">
+                    <span class="result-label">실제</span>
+                    <span class="result-value">${actualText} ${changeStr}</span>
+                    <span class="result-badge ${correctClass}">${correctIcon} ${correctText}</span>
+                </div>
+            `;
         }
     } else {
         badge.textContent = '오늘 예측';
@@ -113,6 +114,7 @@ function updateUI(data) {
         badge.style.color = '';
         directionText.textContent = data.direction_text;
         summaryEl.textContent = data.summary || '';
+        if (resultArea) resultArea.style.display = 'none';
     }
 
     if (isDown) {
