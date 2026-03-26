@@ -220,6 +220,42 @@ body {
     margin-left: 4px;
 }
 
+.prediction-summary {
+    font-size: 0.9rem;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0 0 14px 0;
+    padding: 0;
+}
+
+.prediction-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 0;
+}
+
+.prediction-actions .expand-btn {
+    flex: 1;
+}
+
+.detail-link-btn {
+    background: #f9fafb;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.detail-link-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
 /* Expand Button */
 .expand-btn {
     width: 100%;

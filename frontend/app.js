@@ -63,23 +63,14 @@ function updateUI(data) {
         heroSection.classList.add('hold');
     }
     
-    // Hero 텍스트
+    // Hero = 시장 요약 메시지
     if (!data.is_today) {
-        // 어제 예측 (오늘 예측 아직 미생성)
-        const dirText = isUp ? '상승' : '하락';
-        if (data.is_correct === true) {
-            heroTitle.textContent = `어제 예측 ${dirText} — 적중! ✅`;
-        } else if (data.is_correct === false) {
-            heroTitle.textContent = `어제 예측 ${dirText} — 미적중 ❌`;
-        } else {
-            heroTitle.textContent = `어제 예측: ${dirText} (검증 대기 중)`;
-        }
-        heroSubtitle.textContent = '오늘 예측은 22:00에 업데이트됩니다.';
-
-        // 실제 변동률 표시
+        heroTitle.textContent = '오늘의 예측을 준비하고 있어요 ⏳';
         if (data.actual_change !== null && data.actual_change !== undefined) {
             const sign = data.actual_change >= 0 ? '+' : '';
-            heroSubtitle.textContent = `실제 ${sign}${data.actual_change.toFixed(2)}% | 오늘 예측은 22:00에 업데이트됩니다.`;
+            heroSubtitle.textContent = `오늘 예측은 22:00에 업데이트됩니다.`;
+        } else {
+            heroSubtitle.textContent = '오늘 예측은 22:00에 업데이트됩니다.';
         }
     } else {
         if (isUp) {
@@ -89,17 +80,18 @@ function updateUI(data) {
         } else {
             heroTitle.textContent = '오늘 미국 증시는 보합세가 예상돼요 📊';
         }
-        heroSubtitle.textContent = data.summary || '예측 요약 정보가 없습니다.';
+        heroSubtitle.textContent = '';
     }
-    
-    // QQQ 카드 배지
+
+    // QQQ 카드
     const badge = document.getElementById('predictionBadge');
+    const summaryEl = document.getElementById('predictionSummary');
+
     if (!data.is_today) {
         badge.textContent = '어제 예측';
         badge.style.background = '#f3f4f6';
         badge.style.color = '#6b7280';
 
-        // 검증 결과 반영
         if (data.is_correct === true) {
             directionText.textContent = data.direction_text + ' → 적중 ✅';
         } else if (data.is_correct === false) {
@@ -108,9 +100,19 @@ function updateUI(data) {
         } else {
             directionText.textContent = data.direction_text;
         }
+
+        if (data.actual_change !== null && data.actual_change !== undefined) {
+            const sign = data.actual_change >= 0 ? '+' : '';
+            summaryEl.textContent = `실제 변동: ${sign}${data.actual_change.toFixed(2)}%`;
+        } else {
+            summaryEl.textContent = data.summary || '';
+        }
     } else {
         badge.textContent = '오늘 예측';
+        badge.style.background = '';
+        badge.style.color = '';
         directionText.textContent = data.direction_text;
+        summaryEl.textContent = data.summary || '';
     }
 
     if (isDown) {
