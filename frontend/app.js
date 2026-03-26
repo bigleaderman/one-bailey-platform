@@ -92,9 +92,27 @@ function updateUI(data) {
         heroSubtitle.textContent = data.summary || '예측 요약 정보가 없습니다.';
     }
     
-    // 방향 텍스트 및 아이콘
-    directionText.textContent = data.direction_text;
-    
+    // QQQ 카드 배지
+    const badge = document.getElementById('predictionBadge');
+    if (!data.is_today) {
+        badge.textContent = '어제 예측';
+        badge.style.background = '#f3f4f6';
+        badge.style.color = '#6b7280';
+
+        // 검증 결과 반영
+        if (data.is_correct === true) {
+            directionText.textContent = data.direction_text + ' → 적중 ✅';
+        } else if (data.is_correct === false) {
+            const actualText = data.actual_direction === 'UP' ? '상승' : '하락';
+            directionText.textContent = data.direction_text + ' → 실제 ' + actualText + ' ❌';
+        } else {
+            directionText.textContent = data.direction_text;
+        }
+    } else {
+        badge.textContent = '오늘 예측';
+        directionText.textContent = data.direction_text;
+    }
+
     if (isDown) {
         predictionDirection.classList.add('down');
         directionIcon.classList.add('down');
