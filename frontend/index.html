@@ -35,20 +35,18 @@
         <main class="main-content">
             <!-- Hero Section - 시장 현황 -->
             <section class="hero-card" id="heroSection" onclick="window.location.href='/market.html'">
-                <div class="hero-top">
-                    <span class="hero-label">시장 현황</span>
-                    <span class="hero-date" id="heroDate"></span>
-                </div>
-                <div class="hero-main">
+                <div class="hero-emoji-wrap">
                     <span class="hero-emoji" id="heroEmoji">😐</span>
-                    <h2 class="hero-title" id="heroTitle">시장 분석 중...</h2>
                 </div>
+                <h2 class="hero-title" id="heroTitle">시장 분석 중...</h2>
                 <p class="hero-desc" id="heroDesc">데이터를 불러오고 있습니다.</p>
                 <div class="hero-action" id="heroAction">
-                    <span class="hero-action-icon">💡</span>
                     <span class="hero-action-text" id="heroActionText"></span>
                 </div>
-                <span class="hero-link">시장 분석 보기 →</span>
+                <div class="hero-footer">
+                    <span class="hero-date" id="heroDate"></span>
+                    <span class="hero-link">자세히 보기 →</span>
+                </div>
             </section>
 
             <!-- QQQ 예측 카드 -->
