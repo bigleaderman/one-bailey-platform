@@ -45,19 +45,10 @@ async function loadPrediction() {
 function updateUI(data) {
     // 날짜
     currentPredictionDate = data.date_iso;
-    predictionDate.textContent = data.date;
-    
+
     // 방향 판단
     const isUp = data.direction === 'UP';
     const isDown = data.direction === 'DOWN';
-    
-    // Hero 섹션 스타일
-    heroSection.classList.remove('down', 'hold');
-    if (isDown) {
-        heroSection.classList.add('down');
-    } else if (!isUp) {
-        heroSection.classList.add('hold');
-    }
     
     // QQQ 카드
     const badge = document.getElementById('predictionBadge');
@@ -147,11 +138,9 @@ function truncateText(text, maxLength) {
  * 에러 표시
  */
 function showError(message) {
-    heroTitle.textContent = '데이터를 불러올 수 없습니다';
-    heroSubtitle.textContent = message || '잠시 후 다시 시도해주세요.';
-    predictionDate.textContent = new Date().toLocaleDateString('ko-KR', {
-        year: 'numeric', month: 'long', day: 'numeric'
-    });
+    const badge = document.getElementById('predictionBadge');
+    if (badge) badge.textContent = '로딩 실패';
+    if (directionText) directionText.textContent = message || '데이터를 불러올 수 없습니다';
 }
 
 /**

@@ -18,27 +18,31 @@ router = APIRouter(prefix="/api/market", tags=["market"])
 @router.get("/hero", response_model=HeroResponse)
 def get_hero(db: Session = Depends(get_db)):
     """Hero 시장 요약 (AI 생성)"""
-    row = db.execute(sql_text("""
-        SELECT score, status, emoji, status_text, description, action_guide, data_date
-        FROM market_hero
-        ORDER BY data_date DESC
-        LIMIT 1
-    """)).fetchone()
-
-    if not row:
-        return HeroResponse(
-            score=50, status="중립", emoji="😐",
-            status_text="시장 데이터를 분석 중이에요",
-            description="데이터가 수집되면 시장 상태를 알려드릴게요.",
-            action_guide="잠시만 기다려주세요.",
-            data_date="",
-        )
-
-    return HeroResponse(
-        score=row[0], status=row[1], emoji=row[2],
-        status_text=row[3], description=row[4], action_guide=row[5],
-        data_date=str(row[6]),
+    default = HeroResponse(
+        score=50, status="중립", emoji="😐",
+        status_text="시장 데이터를 분석 중이에요",
+        description="데이터가 수집되면 시장 상태를 알려드릴게요.",
+        action_guide="잠시만 기다려주세요.",
+        data_date="",
     )
+    try:
+        row = db.execute(sql_text("""
+            SELECT score, status, emoji, status_text, description, action_guide, data_date
+            FROM market_hero
+            ORDER BY data_date DESC
+            LIMIT 1
+        """)).fetchone()
+
+        if not row:
+            return default
+
+        return HeroResponse(
+            score=row[0] or 50, status=row[1] or "중립", emoji=row[2] or "😐",
+            status_text=row[3] or "시장 분석 중", description=row[4] or "",
+            action_guide=row[5] or "", data_date=str(row[6]) if row[6] else "",
+        )
+    except Exception:
+        return default
 
 
 @router.get("/monthly-trend", response_model=MonthlyTrendResponse)
