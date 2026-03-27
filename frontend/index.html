@@ -33,21 +33,22 @@
         </header>
 
         <main class="main-content">
-            <!-- Hero Section - 오늘의 시장 요약 -->
-            <section class="hero-card" id="heroSection">
-                <div class="hero-date">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                        <polyline points="17 6 23 6 23 12"></polyline>
-                    </svg>
-                    <span id="predictionDate">로딩 중...</span>
+            <!-- Hero Section - 시장 현황 -->
+            <section class="hero-card" id="heroSection" onclick="window.location.href='/market.html'">
+                <div class="hero-top">
+                    <span class="hero-label">시장 현황</span>
+                    <span class="hero-date" id="heroDate"></span>
                 </div>
-                <h2 class="hero-title" id="heroTitle">
-                    예측 데이터를 불러오는 중...
-                </h2>
-                <p class="hero-subtitle" id="heroSubtitle">
-                    잠시만 기다려주세요
-                </p>
+                <div class="hero-main">
+                    <span class="hero-emoji" id="heroEmoji">😐</span>
+                    <h2 class="hero-title" id="heroTitle">시장 분석 중...</h2>
+                </div>
+                <p class="hero-desc" id="heroDesc">데이터를 불러오고 있습니다.</p>
+                <div class="hero-action" id="heroAction">
+                    <span class="hero-action-icon">💡</span>
+                    <span class="hero-action-text" id="heroActionText"></span>
+                </div>
+                <span class="hero-link">시장 분석 보기 →</span>
             </section>
 
             <!-- QQQ 예측 카드 -->
@@ -109,20 +110,6 @@
                             <li>데이터 로딩 중...</li>
                         </ul>
                     </div>
-                </div>
-            </section>
-
-            <!-- 시장 온도계 (미니) -->
-            <section class="mini-temp" id="miniTemp" onclick="window.location.href='/market.html'">
-                <div class="mini-temp-left">
-                    <span class="mini-temp-emoji" id="miniTempEmoji">😐</span>
-                    <div>
-                        <span class="mini-temp-label" id="miniTempLabel">시장 분석 중...</span>
-                        <span class="mini-temp-desc" id="miniTempDesc"></span>
-                    </div>
-                </div>
-                <div class="mini-temp-bar">
-                    <div class="mini-temp-fill" id="miniTempFill"></div>
                 </div>
             </section>
 

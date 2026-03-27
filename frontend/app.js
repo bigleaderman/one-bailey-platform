@@ -3,17 +3,13 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    loadHero();
     loadPrediction();
-    loadMiniTemperature();
     loadPerformance();
     loadMonthlyTrend();
 });
 
 // 요소 참조
-const heroSection = document.getElementById('heroSection');
-const predictionDate = document.getElementById('predictionDate');
-const heroTitle = document.getElementById('heroTitle');
-const heroSubtitle = document.getElementById('heroSubtitle');
 const directionText = document.getElementById('directionText');
 const directionIcon = document.getElementById('directionIcon');
 const confidenceStars = document.getElementById('confidenceStars');
@@ -63,22 +59,6 @@ function updateUI(data) {
         heroSection.classList.add('hold');
     }
     
-    // Hero = 시장 요약 메시지
-    if (!data.is_today) {
-        const resultIcon = data.is_correct === true ? '✅ 적중' : data.is_correct === false ? '❌ 미적중' : '⏳ 검증 대기';
-        heroTitle.textContent = `어제 예측 결과  ${resultIcon}`;
-        heroSubtitle.textContent = '오늘 예측은 22:00에 업데이트됩니다.';
-    } else {
-        if (isUp) {
-            heroTitle.textContent = '오늘 미국 증시는 상승할 것으로 예상돼요 📈';
-        } else if (isDown) {
-            heroTitle.textContent = '오늘 미국 증시는 하락할 것으로 예상돼요 📉';
-        } else {
-            heroTitle.textContent = '오늘 미국 증시는 보합세가 예상돼요 📊';
-        }
-        heroSubtitle.textContent = '';
-    }
-
     // QQQ 카드
     const badge = document.getElementById('predictionBadge');
     const summaryEl = document.getElementById('predictionSummary');
@@ -199,23 +179,36 @@ document.getElementById('notificationBtn').addEventListener('click', function() 
 });
 
 /**
- * 시장 온도계 (미니)
+ * Hero 시장 현황 로드
  */
-async function loadMiniTemperature() {
+async function loadHero() {
     try {
-        const res = await fetch('/api/market/summary');
+        const res = await fetch('/api/market/hero');
         if (!res.ok) return;
         const data = await res.json();
-        const temp = data.temperature;
 
-        document.getElementById('miniTempEmoji').textContent = temp.emoji;
-        document.getElementById('miniTempLabel').textContent = `시장 ${temp.label}`;
-        document.getElementById('miniTempDesc').textContent = temp.description;
+        document.getElementById('heroEmoji').textContent = data.emoji;
+        document.getElementById('heroTitle').textContent = data.status_text;
+        document.getElementById('heroDesc').textContent = data.description;
+        document.getElementById('heroActionText').textContent = data.action_guide;
 
-        const fill = document.getElementById('miniTempFill');
-        fill.style.left = `calc(${temp.score}% - 7px)`;
+        if (data.data_date) {
+            document.getElementById('heroDate').textContent = data.data_date;
+        }
+
+        // 상태별 카드 색상
+        const card = document.getElementById('heroSection');
+        card.classList.remove('fear', 'anxiety', 'stable', 'greed');
+        if (data.score < 25) card.classList.add('fear');
+        else if (data.score < 40) card.classList.add('anxiety');
+        else if (data.score >= 60 && data.score < 75) card.classList.add('stable');
+        else if (data.score >= 75) card.classList.add('greed');
+
+        // 행동 가이드가 없으면 숨김
+        const actionEl = document.getElementById('heroAction');
+        if (!data.action_guide) actionEl.style.display = 'none';
     } catch (e) {
-        console.error('Mini temp error:', e);
+        console.error('Hero error:', e);
     }
 }
 

@@ -146,6 +146,17 @@ class NewsResponse(BaseModel):
     items: List[NewsItem]
 
 
+class HeroResponse(BaseModel):
+    """Hero 시장 요약 응답"""
+    score: int
+    status: str
+    emoji: str
+    status_text: str
+    description: str
+    action_guide: str
+    data_date: str
+
+
 class EventItem(BaseModel):
     """경제 이벤트"""
     date: str
